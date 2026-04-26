@@ -325,6 +325,14 @@ def main():
             fail += 1
             log.exception("failed on %s: %s", path, e)
 
+    slugs = sorted(
+        d for d in os.listdir(OUTPUT_DIR)
+        if os.path.isdir(os.path.join(OUTPUT_DIR, d))
+    )
+    with open("products.json", "w", encoding="utf-8") as f:
+        json.dump(slugs, f, ensure_ascii=False, indent=2)
+    log.info("wrote products.json with %d entries", len(slugs))
+
     log.info("done. ok=%d fail=%d total=%d", ok, fail, ok + fail)
 
 

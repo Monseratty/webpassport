@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Logifan — Промышленные вентиляторы</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+  />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="nav" id="nav">
+    <div class="nav__inner">
+      <a class="nav__logo" href="#top">Logifan</a>
+      <nav class="nav__links">
+        <a href="#catalog">Каталог</a>
+        <a href="#about">О нас</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="top">
+      <div class="hero__inner">
+        <p class="hero__eyebrow">Серия 2026</p>
+        <h1 class="hero__title">Воздух,<br />сделанный точно.</h1>
+        <p class="hero__subtitle">
+          Промышленные вентиляторы с инженерной безупречностью.
+          Тихие. Мощные. Созданные, чтобы работать дольше.
+        </p>
+        <a href="#catalog" class="btn btn--primary">Смотреть каталог</a>
+      </div>
+      <div class="hero__visual" id="heroVisual">
+        <div class="hero__visual-inner"></div>
+      </div>
+    </section>
+
+    <section class="catalog" id="catalog">
+      <div class="catalog__head">
+        <p class="catalog__eyebrow">Каталог</p>
+        <h2 class="section__title">27 моделей.<br />Один стандарт.</h2>
+      </div>
+
+      <div class="filters">
+        <div class="filters__search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input id="search" type="search" placeholder="Поиск по названию" autocomplete="off" />
+        </div>
+        <div class="filters__group">
+          <label class="select">
+            <select id="filterType"><option value="">Все типы</option></select>
+            <span class="select__chev">▾</span>
+          </label>
+          <label class="select">
+            <select id="filterBrand"><option value="">Все бренды</option></select>
+            <span class="select__chev">▾</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="grid" id="grid" aria-live="polite"></div>
+      <p class="empty" id="empty" hidden>Ничего не найдено.</p>
+    </section>
+
+    <section class="about" id="about">
+      <p class="catalog__eyebrow">О бренде</p>
+      <h2 class="section__title">Инженерия<br />в чистом виде.</h2>
+      <p class="about__text">
+        Каждый вентилятор Logifan — это сочетание точной механики, аккуратной сборки
+        и десятилетий опыта. Мы делаем оборудование, которое работает дольше,
+        тише и эффективнее любого аналога в своём классе.
+      </p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© 2026 Logifan. Каталог сгенерирован из локальных данных.</p>
+  </footer>
+
+  <div class="modal" id="modal" hidden aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal__backdrop" data-close></div>
+    <div class="modal__content" role="document">
+      <button class="modal__close" data-close aria-label="Закрыть">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="6" y1="6" x2="18" y2="18"/>
+          <line x1="6" y1="18" x2="18" y2="6"/>
+        </svg>
+      </button>
+      <div class="modal__body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
