@@ -10,31 +10,18 @@
     "Диаметр воздуховода, мм": "200",
     "Рабочий механизм вентилятора": "Радиальный",
     "Установка вентиляции": "Канальный",
-    "Вид работы вентилятора": "Вытяжной",
-    "Оплатить позже": "Без % до 10 сентября",
-    "Артикул": "2776051365"
+    "Вид работы вентилятора": "Вытяжной"
   },
   "images": [
-    "images/01_logo_ozon_1.png",
-    "images/02_7851454502.jpg",
-    "images/03_7302999179.jpg",
-    "images/04_7851454658.jpg",
-    "images/05_7851454679.jpg",
-    "images/06_7856621107.jpg",
-    "images/07_7856621126.jpg",
-    "images/08_7856621128.jpg",
-    "images/09_7856621057.jpg",
-    "images/10_7856621208.jpg",
-    "images/11_7856621143.jpg",
-    "images/12_cover.jpg",
-    "images/13_7851454502.jpg",
-    "images/14_postPaymentAll.png",
-    "images/15_cover.jpg",
-    "images/16_45e0b02b-b0cd-4b8a-b09c-c1571f3b2101.jpeg",
-    "images/17_7851454502.jpg",
-    "images/18_7851454502.jpg",
-    "images/19_7851454502.jpg",
-    "images/20_9J83YBPQlt9zlECcAVvZ8sT55b0jRguK.png",
-    "images/21_qr-code_1.png"
+    "images/01_7851454502.jpg",
+    "images/02_7302999179.jpg",
+    "images/03_7851454658.jpg",
+    "images/04_7851454679.jpg",
+    "images/05_7856621107.jpg",
+    "images/06_7856621126.jpg",
+    "images/07_7856621128.jpg",
+    "images/08_7856621057.jpg",
+    "images/09_7856621208.jpg",
+    "images/10_7856621143.jpg"
   ]
 }

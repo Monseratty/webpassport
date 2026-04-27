@@ -8,8 +8,13 @@ const PREFERRED_SPEC_ORDER = [
   "Диаметр воздуховода, мм", "Сечение воздуховода, мм",
   "Производительность, м3/час", "Производительность",
   "Мощность", "Напряжение", "Уровень шума", "Материал",
-  "Установка вентиляции", "Вид работы вентилятора", "Артикул",
+  "Установка вентиляции", "Вид работы вентилятора",
 ];
+
+const SPECS_HIDDEN = new Set([
+  "Артикул", "Оплатить позже", "Pay later",
+  "Нашли дешевле", "Сообщить о проблеме",
+]);
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -366,14 +371,19 @@ function topSpecs(p, n = 3) {
   const result = [], seen = new Set();
   for (const key of PREFERRED_SPEC_ORDER) {
     if (result.length >= n) break;
+    if (SPECS_HIDDEN.has(key)) continue;
     const v = p.specs[key];
     if (v) { result.push([key, v]); seen.add(key); }
   }
   for (const [k, v] of Object.entries(p.specs)) {
     if (result.length >= n) break;
-    if (!seen.has(k)) result.push([k, v]);
+    if (!seen.has(k) && !SPECS_HIDDEN.has(k)) result.push([k, v]);
   }
   return result;
+}
+
+function visibleSpecs(p) {
+  return Object.entries(p.specs).filter(([k]) => !SPECS_HIDDEN.has(k));
 }
 
 function priceHtml(p) {
@@ -526,7 +536,7 @@ function openModal(p) {
       <div>
         <p class="detail__specs-label">// ХАРАКТЕРИСТИКИ</p>
         <dl class="detail__specs">
-          ${Object.entries(p.specs).map(([k, v]) => `
+          ${visibleSpecs(p).map(([k, v]) => `
             <div class="detail__row">
               <dt>${escapeHtml(k)}</dt>
               <dd>${escapeHtml(v)}</dd>
