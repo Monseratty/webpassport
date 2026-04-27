@@ -960,6 +960,53 @@ select { cursor: pointer; }
 .card__specs li span:first-child { color: var(--muted); flex-shrink: 0; }
 .card__specs li span:last-child { color: var(--text); text-align: right; }
 
+.card__price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.card__price {
+  font-family: var(--display);
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+.card__price-orig {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  color: var(--muted);
+  text-decoration: line-through;
+  letter-spacing: 0.03em;
+}
+.card__discount {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.06em;
+  color: var(--bg);
+  background: var(--accent);
+  padding: 0.1rem 0.35rem;
+  line-height: 1.6;
+}
+.card__rating {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.65rem;
+}
+.card__rating-stars {
+  color: var(--accent-2);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+}
+.card__rating-score {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  color: var(--muted-2);
+}
+
 .card__footer {
   display: flex;
   align-items: center;
@@ -1481,6 +1528,72 @@ select { cursor: pointer; }
   line-height: 1.35;
   color: var(--white);
 }
+.detail__price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 1rem 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.detail__price {
+  font-family: var(--display);
+  font-size: 2.4rem;
+  line-height: 1;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+.detail__price-orig {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-decoration: line-through;
+  letter-spacing: 0.04em;
+}
+.detail__discount {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--bg);
+  background: var(--accent);
+  padding: 0.2rem 0.6rem;
+  line-height: 1.6;
+}
+.detail__rating {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.detail__rating-stars {
+  color: var(--accent-2);
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+}
+.detail__rating-score {
+  font-family: var(--display);
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--accent);
+}
+.detail__rating-count {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+.detail__description {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  padding: 1.25rem;
+}
+.detail__description p:last-child {
+  font-size: 0.85rem;
+  line-height: 1.8;
+  color: var(--muted-2);
+  margin-top: 0.5rem;
+}
+
 .detail__specs-label {
   font-family: var(--mono);
   font-size: 0.6rem;

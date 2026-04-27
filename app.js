@@ -329,7 +329,17 @@ async function loadProducts() {
       try {
         const data   = await fetch(`${OUTPUT_BASE}/${slug}/data.json`, { cache: "no-store" }).then((r) => r.json());
         const images = (data.images || []).map((rel) => `${OUTPUT_BASE}/${slug}/${rel}`);
-        return { slug, name: data.name || slug, specs: data.specs || {}, images };
+        return {
+          slug,
+          name:          data.name          || slug,
+          specs:         data.specs         || {},
+          images,
+          price:         data.price         ?? null,
+          price_original:data.price_original ?? null,
+          rating:        data.rating        ?? null,
+          reviews_count: data.reviews_count || 0,
+          description:   data.description   || null,
+        };
       } catch {
         return null;
       }
@@ -364,6 +374,35 @@ function topSpecs(p, n = 3) {
     if (!seen.has(k)) result.push([k, v]);
   }
   return result;
+}
+
+function priceHtml(p) {
+  if (!p.price) return "";
+  const pct = (p.price_original && p.price_original > p.price)
+    ? Math.round((1 - p.price / p.price_original) * 100) : 0;
+  return `<div class="card__price-row">
+    <span class="card__price">${p.price.toLocaleString("ru-RU")} ₽</span>
+    ${p.price_original ? `<span class="card__price-orig">${p.price_original.toLocaleString("ru-RU")} ₽</span>` : ""}
+    ${pct > 0 ? `<span class="card__discount">-${pct}%</span>` : ""}
+  </div>`;
+}
+
+function ratingHtml(p, compact = false) {
+  if (!p.rating) return "";
+  const full  = Math.floor(p.rating);
+  const empty = 5 - full;
+  const starsHtml = "★".repeat(full) + "☆".repeat(empty);
+  if (compact) {
+    return `<div class="card__rating">
+      <span class="card__rating-stars">${starsHtml}</span>
+      <span class="card__rating-score">${p.rating.toFixed(1)}</span>
+    </div>`;
+  }
+  return `<div class="detail__rating">
+    <span class="detail__rating-stars">${starsHtml}</span>
+    <span class="detail__rating-score">${p.rating.toFixed(1)}</span>
+    ${p.reviews_count ? `<span class="detail__rating-count">${p.reviews_count} отзывов</span>` : ""}
+  </div>`;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -402,6 +441,8 @@ function buildCard(p, num) {
     </div>
     <div class="card__body">
       <h3 class="card__title">${escapeHtml(p.name)}</h3>
+      ${priceHtml(p)}
+      ${ratingHtml(p, true)}
       <ul class="card__specs">
         ${specs.map(([k, v]) => `
           <li>
@@ -472,6 +513,16 @@ function openModal(p) {
     <div class="detail__info">
       <p class="detail__eyebrow">// ТЕХНИЧЕСКИЕ ХАРАКТЕРИСТИКИ</p>
       <h2 class="detail__title">${escapeHtml(p.name)}</h2>
+      ${p.price ? `<div class="detail__price-row">
+        <span class="detail__price">${p.price.toLocaleString("ru-RU")} ₽</span>
+        ${p.price_original ? `<span class="detail__price-orig">${p.price_original.toLocaleString("ru-RU")} ₽</span>` : ""}
+        ${(p.price_original && p.price_original > p.price) ? `<span class="detail__discount">-${Math.round((1 - p.price / p.price_original) * 100)}%</span>` : ""}
+      </div>` : ""}
+      ${ratingHtml(p)}
+      ${p.description ? `<div class="detail__description">
+        <p class="detail__specs-label">// ОПИСАНИЕ</p>
+        <p>${escapeHtml(p.description)}</p>
+      </div>` : ""}
       <div>
         <p class="detail__specs-label">// ХАРАКТЕРИСТИКИ</p>
         <dl class="detail__specs">

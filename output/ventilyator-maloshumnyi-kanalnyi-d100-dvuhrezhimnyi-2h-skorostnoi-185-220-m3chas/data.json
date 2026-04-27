@@ -1,5 +1,10 @@
 {
   "name": "Вентилятор малошумный канальный D100 двухрежимный (2х скоростной) 185-220 м3/час Logifan",
+  "price": 3130,
+  "price_original": 3459,
+  "rating": 5.0,
+  "reviews_count": 34,
+  "description": "Канальный вентилятор D100 двухрежимный. Скорость 2480/2750 r/min давление 155/180Pa шум 25/30 dBa",
   "specs": {
     "Тип": "Вентилятор канальный",
     "Диаметр воздуховода, мм": "100",
@@ -9,7 +14,13 @@
     "Артикул": "1855323495"
   },
   "images": [
-    "images/01_7872558455.jpg",
-    "images/02_7902868057.jpg"
+    "images/01_logo_ozon_1.png",
+    "images/02_7872558455.jpg",
+    "images/03_7902868057.jpg",
+    "images/04_7872558455.jpg",
+    "images/05_postPaymentAll.png",
+    "images/06_7872558455.jpg",
+    "images/07_9J83YBPQlt9zlECcAVvZ8sT55b0jRguK.png",
+    "images/08_qr-code_1.png"
   ]
 }

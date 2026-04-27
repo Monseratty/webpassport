@@ -1,5 +1,10 @@
 {
   "name": "Вентилятор малошумный канальный D150 двухрежимный (2х скоростной) 410-530 м3/час LOGIFAN",
+  "price": 4219,
+  "price_original": 4662,
+  "rating": 5.0,
+  "reviews_count": 34,
+  "description": "Канальный вентилятор D100 двухрежимный. Производительность 2480/2750 r/min давление 155/180Pa шум 25/30 dBa",
   "specs": {
     "Тип": "Вентилятор канальный",
     "Диаметр воздуховода, мм": "150",
@@ -9,11 +14,17 @@
     "Артикул": "1855323858"
   },
   "images": [
-    "images/01_6869246659.jpg",
-    "images/02_6869246667.jpg",
-    "images/03_6869246685.jpg",
-    "images/04_6869246675.jpg",
-    "images/05_6869246693.jpg",
-    "images/06_6917930277.jpg"
+    "images/01_logo_ozon_1.png",
+    "images/02_6869246659.jpg",
+    "images/03_6869246667.jpg",
+    "images/04_6869246685.jpg",
+    "images/05_6869246675.jpg",
+    "images/06_6869246693.jpg",
+    "images/07_6917930277.jpg",
+    "images/08_6869246659.jpg",
+    "images/09_postPaymentAll.png",
+    "images/10_6869246659.jpg",
+    "images/11_9J83YBPQlt9zlECcAVvZ8sT55b0jRguK.png",
+    "images/12_qr-code_1.png"
   ]
 }
