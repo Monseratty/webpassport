@@ -77,11 +77,65 @@
       </div>
 
       <div class="hero__visual" id="heroVisual">
-        <!-- Rotating decorative rings -->
+        <!-- Animated fan impeller SVG -->
         <div class="hero__rings" aria-hidden="true">
-          <div class="hero__ring hero__ring--a"></div>
-          <div class="hero__ring hero__ring--b"></div>
-          <div class="hero__ring hero__ring--c"></div>
+          <svg class="hero__fan-svg" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <!-- Single blade shape: tapered, backward-swept axial fan blade -->
+              <path id="f-blade" d="M 190 162 C 184 130 183 80 197 26 L 206 27 C 218 80 218 130 210 162 C 205 167 195 167 190 162 Z"/>
+            </defs>
+
+            <!-- Static: outer measurement ring -->
+            <circle cx="200" cy="200" r="186" fill="none" stroke="rgba(255,98,0,0.07)" stroke-width="1" stroke-dasharray="3 13"/>
+
+            <!-- Static: 8 tick marks at 45° intervals -->
+            <line x1="200" y1="14"  x2="200" y2="4"   stroke="rgba(255,98,0,0.18)" stroke-width="1"/>
+            <line x1="332" y1="68"  x2="339" y2="61"  stroke="rgba(255,98,0,0.18)" stroke-width="1"/>
+            <line x1="386" y1="200" x2="396" y2="200" stroke="rgba(255,98,0,0.18)" stroke-width="1"/>
+            <line x1="332" y1="332" x2="339" y2="339" stroke="rgba(255,98,0,0.18)" stroke-width="1"/>
+            <line x1="200" y1="386" x2="200" y2="396" stroke="rgba(255,98,0,0.18)" stroke-width="1"/>
+            <line x1="68"  y1="332" x2="61"  y2="339" stroke="rgba(255,98,0,0.18)" stroke-width="1"/>
+            <line x1="14"  y1="200" x2="4"   y2="200" stroke="rgba(255,98,0,0.18)" stroke-width="1"/>
+            <line x1="68"  y1="68"  x2="61"  y2="61"  stroke="rgba(255,98,0,0.18)" stroke-width="1"/>
+
+            <!-- Static: crosshair guides -->
+            <line x1="200" y1="0" x2="200" y2="400" stroke="rgba(255,98,0,0.04)" stroke-width="0.5"/>
+            <line x1="0" y1="200" x2="400" y2="200" stroke="rgba(255,98,0,0.04)" stroke-width="0.5"/>
+
+            <!-- Static: inner guide circle (diffuser ring) -->
+            <circle cx="200" cy="200" r="62" fill="none" stroke="rgba(255,98,0,0.08)" stroke-width="0.5" stroke-dasharray="5 8"/>
+
+            <!-- ROTATING ROTOR GROUP -->
+            <g class="fan-rotor">
+              <!-- 6 blades via use+rotate -->
+              <use href="#f-blade" transform="rotate(0   200 200)" fill="rgba(255,98,0,0.09)" stroke="rgba(255,98,0,0.32)" stroke-width="0.8"/>
+              <use href="#f-blade" transform="rotate(60  200 200)" fill="rgba(255,98,0,0.09)" stroke="rgba(255,98,0,0.32)" stroke-width="0.8"/>
+              <use href="#f-blade" transform="rotate(120 200 200)" fill="rgba(255,98,0,0.09)" stroke="rgba(255,98,0,0.32)" stroke-width="0.8"/>
+              <use href="#f-blade" transform="rotate(180 200 200)" fill="rgba(255,98,0,0.09)" stroke="rgba(255,98,0,0.32)" stroke-width="0.8"/>
+              <use href="#f-blade" transform="rotate(240 200 200)" fill="rgba(255,98,0,0.09)" stroke="rgba(255,98,0,0.32)" stroke-width="0.8"/>
+              <use href="#f-blade" transform="rotate(300 200 200)" fill="rgba(255,98,0,0.09)" stroke="rgba(255,98,0,0.32)" stroke-width="0.8"/>
+
+              <!-- Hub outer ring -->
+              <circle cx="200" cy="200" r="34" fill="rgba(255,98,0,0.10)" stroke="rgba(255,98,0,0.45)" stroke-width="1.5"/>
+              <!-- Hub inner ring -->
+              <circle cx="200" cy="200" r="16" fill="none" stroke="rgba(255,98,0,0.28)" stroke-width="1"/>
+              <!-- 6 mount bolts at r=22 -->
+              <circle cx="200"   cy="178"   r="2.5" fill="rgba(255,98,0,0.45)"/>
+              <circle cx="219.1" cy="189"   r="2.5" fill="rgba(255,98,0,0.45)"/>
+              <circle cx="219.1" cy="211"   r="2.5" fill="rgba(255,98,0,0.45)"/>
+              <circle cx="200"   cy="222"   r="2.5" fill="rgba(255,98,0,0.45)"/>
+              <circle cx="180.9" cy="211"   r="2.5" fill="rgba(255,98,0,0.45)"/>
+              <circle cx="180.9" cy="189"   r="2.5" fill="rgba(255,98,0,0.45)"/>
+              <!-- Center shaft -->
+              <circle cx="200" cy="200" r="5" fill="rgba(255,98,0,0.75)"/>
+            </g>
+
+            <!-- Static: technical annotation labels -->
+            <text x="8"  y="197" fill="rgba(255,98,0,0.22)" font-family="'Space Mono',monospace" font-size="7.5" letter-spacing="0.5">∅ 300</text>
+            <text x="8"  y="209" fill="rgba(255,98,0,0.18)" font-family="'Space Mono',monospace" font-size="6.5" letter-spacing="0.5">IP44</text>
+            <text x="332" y="197" fill="rgba(255,98,0,0.22)" font-family="'Space Mono',monospace" font-size="7.5" text-anchor="end">n·min⁻¹</text>
+            <text x="197" y="392" fill="rgba(255,98,0,0.18)" font-family="'Space Mono',monospace" font-size="6.5" text-anchor="middle">LOGIFAN</text>
+          </svg>
         </div>
 
         <!-- Product image frame -->
@@ -160,6 +214,37 @@
         <span class="ticker__item">MADE IN RUSSIA</span>
         <span class="ticker__sep">·</span>
       </div>
+    </div>
+
+    <!-- ═══════════════════════════ AIRFLOW VIS ═════════════════════ -->
+    <div class="airflow-vis" aria-hidden="true">
+      <svg class="airflow-svg" viewBox="0 0 1200 220" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+        <!-- Fan disc indicator -->
+        <circle cx="600" cy="110" r="52" fill="none" stroke="rgba(255,98,0,0.08)" stroke-width="1" stroke-dasharray="4 8"/>
+        <circle cx="600" cy="110" r="28" fill="none" stroke="rgba(255,98,0,0.05)" stroke-width="0.5"/>
+        <circle cx="600" cy="110" r="6"  fill="rgba(255,98,0,0.12)"/>
+
+        <!-- Streamlines ABOVE center (deflect upward around disc) -->
+        <path class="afl" style="--d:3.2s;--dl:-0.3s" d="M 0 20  C 400 20  490 16  540 15  S 660 16  900 20  1200 20"/>
+        <path class="afl" style="--d:3.6s;--dl:-1.1s" d="M 0 45  C 350 45  470 38  530 35  S 670 38  850 45  1200 45"/>
+        <path class="afl" style="--d:3.9s;--dl:-0.7s" d="M 0 68  C 300 68  460 56  525 50  S 675 56  900 68  1200 68"/>
+        <path class="afl" style="--d:4.2s;--dl:-1.8s" d="M 0 86  C 280 86  455 68  520 58  S 680 68  920 86  1200 86"/>
+        <path class="afl" style="--d:4.6s;--dl:-0.9s" d="M 0 100 C 260 100 445 75  515 62  S 685 75  940 100 1200 100"/>
+
+        <!-- Streamlines BELOW center (deflect downward) -->
+        <path class="afl" style="--d:4.6s;--dl:-2.1s" d="M 0 120 C 260 120 445 145 515 158 S 685 145 940 120 1200 120"/>
+        <path class="afl" style="--d:4.2s;--dl:-1.4s" d="M 0 134 C 280 134 455 152 520 162 S 680 152 920 134 1200 134"/>
+        <path class="afl" style="--d:3.9s;--dl:-0.5s" d="M 0 152 C 300 152 460 164 525 170 S 675 164 900 152 1200 152"/>
+        <path class="afl" style="--d:3.6s;--dl:-1.7s" d="M 0 175 C 350 175 470 182 530 185 S 670 182 850 175 1200 175"/>
+        <path class="afl" style="--d:3.2s;--dl:-0.6s" d="M 0 200 C 400 200 490 204 540 205 S 660 204 900 200 1200 200"/>
+
+        <!-- Direction arrows (static) -->
+        <text x="30"  y="113" fill="rgba(255,98,0,0.15)" font-family="monospace" font-size="9" letter-spacing="2">→</text>
+        <text x="1140" y="113" fill="rgba(255,98,0,0.15)" font-family="monospace" font-size="9" letter-spacing="2">→</text>
+        <!-- Label -->
+        <text x="600" y="108" fill="rgba(255,98,0,0.20)" font-family="'Space Mono',monospace" font-size="7" text-anchor="middle" letter-spacing="1">CFD</text>
+        <text x="600" y="118" fill="rgba(255,98,0,0.15)" font-family="'Space Mono',monospace" font-size="5.5" text-anchor="middle" letter-spacing="0.5">FLOW SIM</text>
+      </svg>
     </div>
 
     <!-- ═══════════════════════════ CATALOG ══════════════════════════ -->
@@ -258,6 +343,39 @@
     <section class="about" id="about">
       <div class="about__inner">
         <div class="about__left">
+          <!-- Wind rose decoration -->
+          <svg class="about__wind-rose" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <!-- Concentric rings -->
+            <circle cx="150" cy="150" r="120" fill="none" stroke="rgba(255,98,0,0.06)" stroke-width="1"/>
+            <circle cx="150" cy="150" r="80"  fill="none" stroke="rgba(255,98,0,0.05)" stroke-width="0.5"/>
+            <circle cx="150" cy="150" r="40"  fill="none" stroke="rgba(255,98,0,0.05)" stroke-width="0.5"/>
+            <!-- 16 direction spokes with varying lengths -->
+            <g class="wind-rose-spokes" stroke="rgba(255,98,0,0.18)" stroke-width="1.5" stroke-linecap="round">
+              <!-- N  0°   full --> <line x1="150" y1="150" x2="150" y2="30"/>
+              <!-- NNE 22.5° --> <line x1="150" y1="150" x2="196" y2="42"/>
+              <!-- NE 45°  med --> <line x1="150" y1="150" x2="226" y2="74"/>
+              <!-- ENE 67.5° --> <line x1="150" y1="150" x2="238" y2="104"/>
+              <!-- E  90°   full--> <line x1="150" y1="150" x2="270" y2="150"/>
+              <!-- ESE 112.5° --> <line x1="150" y1="150" x2="242" y2="195"/>
+              <!-- SE 135°  med --> <line x1="150" y1="150" x2="226" y2="226"/>
+              <!-- SSE 157.5° --> <line x1="150" y1="150" x2="196" y2="258"/>
+              <!-- S  180°   --> <line x1="150" y1="150" x2="150" y2="248"/>
+              <!-- SSW 202.5° --> <line x1="150" y1="150" x2="104" y2="240"/>
+              <!-- SW 225°  short --> <line x1="150" y1="150" x2="84"  y2="216"/>
+              <!-- WSW 247.5° --> <line x1="150" y1="150" x2="62"  y2="195"/>
+              <!-- W  270°   --> <line x1="150" y1="150" x2="42"  y2="150"/>
+              <!-- WNW 292.5° --> <line x1="150" y1="150" x2="62"  y2="104"/>
+              <!-- NW 315°  med --> <line x1="150" y1="150" x2="84"  y2="74"/>
+              <!-- NNW 337.5° --> <line x1="150" y1="150" x2="112" y2="48"/>
+            </g>
+            <!-- Cardinal labels -->
+            <text x="150" y="18"  fill="rgba(255,98,0,0.25)" font-family="'Space Mono',monospace" font-size="9" text-anchor="middle">N</text>
+            <text x="283" y="154" fill="rgba(255,98,0,0.25)" font-family="'Space Mono',monospace" font-size="9">E</text>
+            <text x="150" y="296" fill="rgba(255,98,0,0.25)" font-family="'Space Mono',monospace" font-size="9" text-anchor="middle">S</text>
+            <text x="22"  y="154" fill="rgba(255,98,0,0.25)" font-family="'Space Mono',monospace" font-size="9">W</text>
+            <!-- Center dot -->
+            <circle cx="150" cy="150" r="4" fill="rgba(255,98,0,0.30)"/>
+          </svg>
           <div class="about__eyebrow reveal-item">// О БРЕНДЕ</div>
           <h2 class="about__title reveal-line">ИНЖЕНЕРИЯ<br>БЕЗ<br>КОМПРОМИСС</h2>
         </div>
@@ -349,6 +467,9 @@
       <div class="modal__body" id="modalBody"></div>
     </div>
   </div>
+
+  <!-- Grain noise overlay — industrial texture depth -->
+  <div class="grain-overlay" aria-hidden="true"></div>
 
   <script src="app.js"></script>
 </body>

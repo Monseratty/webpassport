@@ -445,6 +445,7 @@ function buildCard(p, num) {
   card.innerHTML = `
     <span class="card__num">#${String(num).padStart(2, "0")}</span>
     <div class="card__media">
+      <div class="card__bp" aria-hidden="true"><div class="card__bp-h"></div><div class="card__bp-v"></div><div class="card__bp-dot"></div></div>
       ${img
         ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" loading="lazy">`
         : `<div class="card__media-fallback">НЕТ ФОТО</div>`}

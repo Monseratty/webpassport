@@ -473,33 +473,9 @@ select { cursor: pointer; }
   pointer-events: none;
   width: 600px;
   height: 600px;
+  /* Now holds the SVG fan impeller instead of CSS ring divs */
 }
-.hero__ring {
-  position: absolute;
-  top: 50%; left: 50%;
-  border-radius: 50%;
-  animation: ring-spin linear infinite;
-  transform-origin: center;
-}
-.hero__ring--a {
-  width: 560px; height: 560px;
-  margin: -280px 0 0 -280px;
-  border: 1px dashed rgba(255,98,0,0.14);
-  animation-duration: 35s;
-}
-.hero__ring--b {
-  width: 440px; height: 440px;
-  margin: -220px 0 0 -220px;
-  border: 1px solid rgba(255,98,0,0.09);
-  animation-duration: 22s;
-  animation-direction: reverse;
-}
-.hero__ring--c {
-  width: 340px; height: 340px;
-  margin: -170px 0 0 -170px;
-  border: 1px dashed rgba(255,98,0,0.07);
-  animation-duration: 50s;
-}
+/* Legacy ring keyframes kept for scan line and other users */
 @keyframes ring-spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
@@ -1676,5 +1652,180 @@ select { cursor: pointer; }
   .ticker__track { animation: none; }
   .hero__scroll-line { animation: none; }
   .card__media::before { display: none; }
+  .fan-rotor { animation: none; }
+  .afl { animation: none; }
+  .wind-rose-spokes { animation: none; }
   * { transition-duration: 0.01ms !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   VISUAL ENHANCEMENTS — CFD / Engineering Aesthetics
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── 1. Grain noise overlay ─────────────────────────────────── */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9996;
+  opacity: 0.028;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 320px 320px;
+}
+
+/* ─── 2. Hero fan SVG ────────────────────────────────────────── */
+.hero__fan-svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
+  width: 600px;
+  height: 600px;
+  overflow: visible;
+}
+
+/* Fan rotor rotation */
+.fan-rotor {
+  transform-origin: 200px 200px;
+  transform-box: view-box;
+  animation: fan-rotor-spin 9s linear infinite;
+  will-change: transform;
+}
+@keyframes fan-rotor-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ─── 3. CFD Airflow visualisation ──────────────────────────── */
+.airflow-vis {
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  height: 130px;
+  position: relative;
+}
+.airflow-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Animated streamlines */
+.afl {
+  fill: none;
+  stroke: rgba(255, 98, 0, 0.28);
+  stroke-width: 1;
+  stroke-dasharray: 14 22;
+  animation: afl-flow var(--d, 3.5s) var(--dl, 0s) linear infinite;
+}
+/* Vary opacity by proximity to fan disc (nearest = stronger) */
+.afl:nth-child(5),
+.afl:nth-child(6) { stroke: rgba(255,98,0,0.45); stroke-width: 1.2; }
+.afl:nth-child(4),
+.afl:nth-child(7) { stroke: rgba(255,98,0,0.36); }
+
+@keyframes afl-flow {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: -108; }
+}
+
+/* ─── 4. Blueprint crosshair on card hover ───────────────────── */
+.card__media {
+  position: relative; /* ensure this is set */
+}
+.card__bp {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  overflow: hidden;
+}
+.card__bp-h,
+.card__bp-v {
+  position: absolute;
+  background: rgba(255, 98, 0, 0.22);
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1);
+}
+.card__bp-h {
+  left: 0; right: 0;
+  top: 50%;
+  height: 1px;
+  transform: scaleX(0);
+  transform-origin: center;
+}
+.card__bp-v {
+  top: 0; bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: scaleY(0);
+  transform-origin: center;
+}
+.card__bp-dot {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 8px; height: 8px;
+  border: 1px solid rgba(255,98,0,0.5);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  transition: opacity 0.2s 0.1s, transform 0.3s 0.1s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.card:hover .card__bp-h,
+.card:hover .card__bp-v { opacity: 1; }
+.card:hover .card__bp-h { transform: scaleX(1); }
+.card:hover .card__bp-v { transform: scaleY(1); }
+.card:hover .card__bp-dot { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+
+/* ─── 5. Wind rose in About ──────────────────────────────────── */
+.about__wind-rose {
+  position: absolute;
+  top: -1rem;
+  left: -2rem;
+  width: 320px;
+  height: 320px;
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 0;
+}
+.about__left { position: relative; }
+.about__left .about__eyebrow,
+.about__left .about__title { position: relative; z-index: 1; }
+
+/* Wind rose spokes slow drift rotation */
+.wind-rose-spokes {
+  transform-origin: 150px 150px;
+  animation: wind-rose-drift 45s linear infinite;
+}
+@keyframes wind-rose-drift {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ─── Features: ambient air-streak background ────────────────── */
+.features {
+  position: relative;
+}
+.features::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background-image:
+    repeating-linear-gradient(
+      -8deg,
+      transparent 0px,
+      transparent 60px,
+      rgba(255,98,0,0.018) 60px,
+      rgba(255,98,0,0.018) 61px
+    );
+  animation: streak-drift 18s linear infinite;
+  will-change: background-position;
+}
+@keyframes streak-drift {
+  from { background-position: 0 0; }
+  to   { background-position: 400px 400px; }
 }
