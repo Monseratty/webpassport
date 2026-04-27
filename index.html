@@ -6,58 +6,172 @@
   <title>LOGIFAN — Промышленные вентиляторы</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Manrope:wght@300;400;500;600&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Manrope:wght@300;400;500;600;700&display=swap" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+
+  <!-- ═══════════════════════════ PRELOADER ═══════════════════════════ -->
+  <div class="preloader" id="preloader" aria-hidden="true">
+    <div class="preloader__scanlines"></div>
+    <div class="preloader__corner preloader__corner--tl"></div>
+    <div class="preloader__corner preloader__corner--tr"></div>
+    <div class="preloader__corner preloader__corner--bl"></div>
+    <div class="preloader__corner preloader__corner--br"></div>
+    <div class="preloader__inner">
+      <div class="preloader__logo" id="preloaderLogo">LOGIFAN</div>
+      <div class="preloader__bar">
+        <div class="preloader__fill" id="preloaderFill"></div>
+      </div>
+      <div class="preloader__status">// ИНИЦИАЛИЗАЦИЯ СИСТЕМЫ</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════ CURSOR ═══════════════════════════════ -->
+  <div class="cursor" id="cursor" aria-hidden="true"></div>
+  <div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
+
+  <!-- ═══════════════════════════ SCROLL PROGRESS ═══════════════════════ -->
+  <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+  <!-- ═══════════════════════════ NAV ══════════════════════════════════ -->
   <header class="nav" id="nav">
     <div class="nav__inner">
-      <a class="nav__logo" href="#top">LOGIFAN</a>
-      <div class="nav__right">
+      <a class="nav__logo" href="#top">
+        <span>LOGIFAN</span>
+        <span class="nav__logo-accent"></span>
+      </a>
+      <nav class="nav__links" aria-label="Основная навигация">
         <a class="nav__link" href="#catalog">КАТАЛОГ</a>
-        <span class="nav__sep">·</span>
+        <a class="nav__link" href="#features">ПРЕИМУЩЕСТВА</a>
         <a class="nav__link" href="#about">О НАС</a>
-      </div>
+      </nav>
+      <a class="nav__cta" href="#catalog">ПОДОБРАТЬ МОДЕЛЬ</a>
     </div>
   </header>
 
   <main>
+
+    <!-- ═══════════════════════════ HERO ══════════════════════════════ -->
     <section class="hero" id="top">
       <div class="hero__bg-grid" aria-hidden="true"></div>
+      <div class="hero__bg-glow" aria-hidden="true"></div>
+      <canvas class="hero__particles" id="heroParticles" aria-hidden="true"></canvas>
+
       <div class="hero__content">
-        <div class="hero__tag">СЕРИЯ 2026 · 27 МОДЕЛЕЙ</div>
-        <h1 class="hero__title"><span class="hero__title-line1">ПРОМЫШЛЕННЫЕ</span><br><span class="hero__title-accent">ВЕНТИЛЯТОРЫ</span></h1>
-        <p class="hero__sub">Промышленные осевые и канальные системы.<br>Спроектированы работать — годами.</p>
-        <a href="#catalog" class="hero__cta">
-          <span>СМОТРЕТЬ КАТАЛОГ</span>
-          <svg viewBox="0 0 24 6" fill="none"><path d="M0 3h22M19 0l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
+        <div class="hero__tag reveal-item" style="--ri:0">СЕРИЯ 2026 · 27 МОДЕЛЕЙ</div>
+        <h1 class="hero__title">
+          <span class="hero__title-top reveal-line" style="--ri:1">ПРОМЫШЛЕННЫЕ</span>
+          <span class="hero__title-main reveal-line" style="--ri:2">ВЕНТИЛЯТОРЫ</span>
+        </h1>
+        <p class="hero__sub reveal-item" style="--ri:3">
+          Промышленные осевые и канальные системы.<br>Спроектированы работать — годами.
+        </p>
+        <div class="hero__btns reveal-item" style="--ri:4">
+          <a href="#catalog" class="btn-primary">
+            <span>СМОТРЕТЬ КАТАЛОГ</span>
+            <svg viewBox="0 0 26 8" fill="none"><path d="M0 4h24M20 1l3 3-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a href="#about" class="btn-ghost">О КОМПАНИИ</a>
+        </div>
       </div>
+
       <div class="hero__visual" id="heroVisual">
-        <div class="hero__img-wrap">
-          <div class="hero__img-inner"></div>
+        <!-- Rotating decorative rings -->
+        <div class="hero__rings" aria-hidden="true">
+          <div class="hero__ring hero__ring--a"></div>
+          <div class="hero__ring hero__ring--b"></div>
+          <div class="hero__ring hero__ring--c"></div>
         </div>
-        <div class="hero__stat-strip" aria-hidden="true">
-          <div class="hero__stat"><span class="hero__stat-n">27</span><span class="hero__stat-l">МОДЕЛЕЙ</span></div>
-          <div class="hero__stat"><span class="hero__stat-n">1000</span><span class="hero__stat-l">м³/ч МАКС</span></div>
-          <div class="hero__stat"><span class="hero__stat-n">IP44</span><span class="hero__stat-l">ЗАЩИТА</span></div>
+
+        <!-- Product image frame -->
+        <div class="hero__frame reveal-item" style="--ri:2">
+          <div class="hero__frame-corner hero__frame-corner--tl" aria-hidden="true"></div>
+          <div class="hero__frame-corner hero__frame-corner--tr" aria-hidden="true"></div>
+          <div class="hero__frame-corner hero__frame-corner--bl" aria-hidden="true"></div>
+          <div class="hero__frame-corner hero__frame-corner--br" aria-hidden="true"></div>
+          <div class="hero__frame-scan" aria-hidden="true"></div>
+          <div class="hero__img-inner" id="heroImg"></div>
+        </div>
+
+        <!-- Stats strip -->
+        <div class="hero__stats reveal-item" style="--ri:3">
+          <div class="hero__stat">
+            <span class="hero__stat-n count-up" data-target="27">0</span>
+            <span class="hero__stat-l">МОДЕЛЕЙ</span>
+          </div>
+          <div class="hero__stat-div" aria-hidden="true"></div>
+          <div class="hero__stat">
+            <span class="hero__stat-n count-up" data-target="1000">0</span>
+            <span class="hero__stat-l">м³/ч МАКС</span>
+          </div>
+          <div class="hero__stat-div" aria-hidden="true"></div>
+          <div class="hero__stat">
+            <span class="hero__stat-n">IP44</span>
+            <span class="hero__stat-l">ЗАЩИТА</span>
+          </div>
+          <div class="hero__stat-div" aria-hidden="true"></div>
+          <div class="hero__stat">
+            <span class="hero__stat-n">15+</span>
+            <span class="hero__stat-l">ЛЕТ</span>
+          </div>
         </div>
       </div>
+
       <div class="hero__scroll-hint" aria-hidden="true">
         <span>SCROLL</span>
         <div class="hero__scroll-line"></div>
       </div>
     </section>
 
+    <!-- ═══════════════════════════ TICKER ════════════════════════════ -->
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker__track">
+        <span class="ticker__item">LOGIFAN</span>
+        <span class="ticker__sep">·</span>
+        <span class="ticker__item">ПРОМЫШЛЕННЫЕ ВЕНТИЛЯТОРЫ</span>
+        <span class="ticker__sep">·</span>
+        <span class="ticker__item">27 МОДЕЛЕЙ</span>
+        <span class="ticker__sep">·</span>
+        <span class="ticker__item">СЕРИЯ 2026</span>
+        <span class="ticker__sep">·</span>
+        <span class="ticker__item">IP44 ЗАЩИТА</span>
+        <span class="ticker__sep">·</span>
+        <span class="ticker__item">220V / 380V</span>
+        <span class="ticker__sep">·</span>
+        <span class="ticker__item">ОСЕВЫЕ · КАНАЛЬНЫЕ · РАДИАЛЬНЫЕ</span>
+        <span class="ticker__sep">·</span>
+        <span class="ticker__item">MADE IN RUSSIA</span>
+        <span class="ticker__sep">·</span>
+        <span class="ticker__item">LOGIFAN</span>
+        <span class="ticker__sep">·</span>
+        <span class="ticker__item">ПРОМЫШЛЕННЫЕ ВЕНТИЛЯТОРЫ</span>
+        <span class="ticker__sep">·</span>
+        <span class="ticker__item">27 МОДЕЛЕЙ</span>
+        <span class="ticker__sep">·</span>
+        <span class="ticker__item">СЕРИЯ 2026</span>
+        <span class="ticker__sep">·</span>
+        <span class="ticker__item">IP44 ЗАЩИТА</span>
+        <span class="ticker__sep">·</span>
+        <span class="ticker__item">220V / 380V</span>
+        <span class="ticker__sep">·</span>
+        <span class="ticker__item">ОСЕВЫЕ · КАНАЛЬНЫЕ · РАДИАЛЬНЫЕ</span>
+        <span class="ticker__sep">·</span>
+        <span class="ticker__item">MADE IN RUSSIA</span>
+        <span class="ticker__sep">·</span>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════ CATALOG ══════════════════════════ -->
     <section class="catalog" id="catalog">
       <div class="catalog__header">
         <div class="catalog__header-left">
-          <div class="catalog__eyebrow">// КАТАЛОГ ПРОДУКЦИИ</div>
-          <h2 class="catalog__title">ПОЛНЫЙ<br>АССОРТИМЕНТ</h2>
+          <div class="catalog__eyebrow reveal-item">// КАТАЛОГ ПРОДУКЦИИ</div>
+          <h2 class="catalog__title reveal-line">ПОЛНЫЙ<br>АССОРТИМЕНТ</h2>
         </div>
         <div class="catalog__header-right">
-          <p class="catalog__desc">Осевые, канальные, радиальные вентиляторы Logifan для любых задач вентиляции и кондиционирования.</p>
-          <div class="count-badge" id="countBadge"><span id="countNum">27</span> единиц</div>
+          <p class="catalog__desc reveal-item">Осевые, канальные, радиальные вентиляторы Logifan для любых задач вентиляции и кондиционирования.</p>
+          <div class="count-badge reveal-item"><span id="countNum">27</span> единиц</div>
         </div>
       </div>
 
@@ -67,7 +181,7 @@
             <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.5"/>
             <path d="M15 15l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
-          <input id="search" type="search" placeholder="ПОИСК..." autocomplete="off" spellcheck="false" />
+          <input id="search" type="search" placeholder="ПОИСК МОДЕЛИ..." autocomplete="off" spellcheck="false" />
         </div>
         <div class="filters__selects">
           <div class="filter-pill">
@@ -83,15 +197,89 @@
       <p class="empty" id="empty" hidden>// НИЧЕГО НЕ НАЙДЕНО</p>
     </section>
 
+    <!-- ═══════════════════════════ FEATURES ═════════════════════════ -->
+    <section class="features" id="features">
+      <div class="features__inner">
+        <div class="features__header">
+          <div class="features__eyebrow reveal-item">// ПОЧЕМУ LOGIFAN</div>
+          <h2 class="features__title reveal-line">ИНЖЕНЕРИЯ<br>НА ПРЕДЕЛЕ</h2>
+        </div>
+        <div class="features__grid">
+
+          <div class="feat-card reveal-item" style="--ri:0">
+            <div class="feat-card__num">01</div>
+            <div class="feat-card__icon">
+              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="24" cy="24" r="19" stroke="currentColor" stroke-width="1.5"/>
+                <circle cx="24" cy="24" r="11" stroke="currentColor" stroke-width="1"/>
+                <circle cx="24" cy="24" r="3.5" fill="currentColor"/>
+                <path d="M24 5v4M24 39v4M5 24h4M39 24h4M9.7 9.7l2.8 2.8M35.5 35.5l2.8 2.8M9.7 38.3l2.8-2.8M35.5 12.5l2.8-2.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <h3 class="feat-card__title">Точная аэродинамика</h3>
+            <p class="feat-card__desc">Каждая лопасть рассчитана методом вычислительной гидродинамики. Максимальный КПД при минимальном шуме.</p>
+            <div class="feat-card__line" aria-hidden="true"></div>
+          </div>
+
+          <div class="feat-card reveal-item" style="--ri:1">
+            <div class="feat-card__num">02</div>
+            <div class="feat-card__icon">
+              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="7" y="7" width="34" height="34" rx="3" stroke="currentColor" stroke-width="1.5"/>
+                <rect x="15" y="15" width="18" height="18" stroke="currentColor" stroke-width="1"/>
+                <rect x="20" y="20" width="8" height="8" fill="currentColor" opacity="0.7"/>
+                <path d="M7 19h8M7 29h8M33 19h8M33 29h8M19 7v8M29 7v8M19 33v8M29 33v8" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <h3 class="feat-card__title">Сертификат IP44</h3>
+            <p class="feat-card__desc">Полная защита от пыли и водяных брызг. Работает в самых жёстких промышленных условиях без сбоев.</p>
+            <div class="feat-card__line" aria-hidden="true"></div>
+          </div>
+
+          <div class="feat-card reveal-item" style="--ri:2">
+            <div class="feat-card__num">03</div>
+            <div class="feat-card__icon">
+              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M24 4L43 15v18L24 44 5 33V15L24 4z" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M24 13l12 7v12l-12 7-12-7V20l12-7z" stroke="currentColor" stroke-width="1"/>
+                <path d="M24 22v4M24 30v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <h3 class="feat-card__title">100 000+ часов</h3>
+            <p class="feat-card__desc">Промышленный ресурс — более 100 000 часов непрерывной работы. Не требует внепланового обслуживания.</p>
+            <div class="feat-card__line" aria-hidden="true"></div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════ ABOUT ════════════════════════════ -->
     <section class="about" id="about">
       <div class="about__inner">
         <div class="about__left">
-          <div class="about__eyebrow">// О БРЕНДЕ</div>
-          <h2 class="about__title">ИНЖЕНЕРИЯ<br>БЕЗ<br>КОМПРОМИСС</h2>
+          <div class="about__eyebrow reveal-item">// О БРЕНДЕ</div>
+          <h2 class="about__title reveal-line">ИНЖЕНЕРИЯ<br>БЕЗ<br>КОМПРОМИСС</h2>
         </div>
         <div class="about__right">
-          <p class="about__body">Каждая модель Logifan — это результат точного расчёта аэродинамики, качественных материалов и контроля на каждом этапе производства. Мы поставляем оборудование, которое не требует замены раньше срока.</p>
-          <div class="about__tags">
+          <p class="about__body reveal-item">Каждая модель Logifan — результат точного расчёта аэродинамики, качественных материалов и контроля на каждом этапе производства. Мы поставляем оборудование, которое не требует замены раньше срока.</p>
+
+          <div class="about__nums reveal-item" style="--ri:1">
+            <div class="about__num">
+              <span class="about__num-n count-up" data-target="15">0</span><span class="about__num-suf">+</span>
+              <span class="about__num-l">ЛЕТ ОПЫТА</span>
+            </div>
+            <div class="about__num">
+              <span class="about__num-n count-up" data-target="500">0</span><span class="about__num-suf">+</span>
+              <span class="about__num-l">КЛИЕНТОВ</span>
+            </div>
+            <div class="about__num">
+              <span class="about__num-n count-up" data-target="27">0</span>
+              <span class="about__num-l">МОДЕЛЕЙ</span>
+            </div>
+          </div>
+
+          <div class="about__tags reveal-item" style="--ri:2">
             <span>ОСЕВЫЕ</span>
             <span>КАНАЛЬНЫЕ</span>
             <span>РАДИАЛЬНЫЕ</span>
@@ -101,16 +289,55 @@
         </div>
       </div>
     </section>
+
+    <!-- ═══════════════════════════ CTA ══════════════════════════════ -->
+    <section class="cta-section">
+      <div class="cta-section__bg" aria-hidden="true">LOGIFAN</div>
+      <div class="cta-section__inner">
+        <div class="cta-section__eyebrow reveal-item">// ГОТОВЫ К РАБОТЕ</div>
+        <h2 class="cta-section__title reveal-line">ВЫБЕРИТЕ<br>ВАШУ МОДЕЛЬ</h2>
+        <p class="cta-section__sub reveal-item">27 моделей в каталоге. Консультация инженера — бесплатно.</p>
+        <a href="#catalog" class="btn-primary reveal-item" style="--ri:1">
+          <span>ОТКРЫТЬ КАТАЛОГ</span>
+          <svg viewBox="0 0 26 8" fill="none"><path d="M0 4h24M20 1l3 3-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </section>
+
   </main>
 
+  <!-- ═══════════════════════════ FOOTER ═══════════════════════════ -->
   <footer class="footer">
-    <div class="footer__inner">
-      <span class="footer__logo">LOGIFAN</span>
-      <span class="footer__copy">© 2026 — Каталог промышленных вентиляторов</span>
+    <div class="footer__top">
+      <div class="footer__inner">
+        <div class="footer__brand">
+          <span class="footer__logo">LOGIFAN</span>
+          <p class="footer__tagline">Промышленные системы вентиляции<br>Серия 2026 · 27 моделей</p>
+        </div>
+        <div class="footer__nav">
+          <p class="footer__nav-label">Навигация</p>
+          <a class="footer__nav-link" href="#catalog">Каталог продукции</a>
+          <a class="footer__nav-link" href="#features">Преимущества</a>
+          <a class="footer__nav-link" href="#about">О компании</a>
+        </div>
+        <div class="footer__specs">
+          <p class="footer__nav-label">Характеристики</p>
+          <p class="footer__spec-item">// IP44 защита</p>
+          <p class="footer__spec-item">// 220V / 380V питание</p>
+          <p class="footer__spec-item">// Осевые · Канальные · Радиальные</p>
+          <p class="footer__spec-item">// 100 000+ часов ресурс</p>
+        </div>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <div class="footer__inner footer__inner--bottom">
+        <span class="footer__copy">© 2026 LOGIFAN — Промышленные вентиляторы</span>
+        <span class="footer__ver">// BUILD 2026.04</span>
+      </div>
     </div>
   </footer>
 
-  <!-- MODAL -->
+  <!-- ═══════════════════════════ MODAL ════════════════════════════ -->
   <div class="modal" id="modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Карточка товара">
     <div class="modal__backdrop" data-close></div>
     <div class="modal__panel">
