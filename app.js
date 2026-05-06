@@ -1,674 +1,1214 @@
-/* ─── Config ────────────────────────────────────────────────── */
 const API = 'https://webapppassport.fly.dev';
+const MAX_SCORE = 179;
+const POPULAR_ISOS = ['SG','DE','JP','GB','FR','IT','ES','US','CA','AU','NZ','CH','SE','NO','DK','FI','NL','AT','BE','LU','PT','KR','UAE','BR','MX'];
 
-/* ─── Helpers ───────────────────────────────────────────────── */
+const JVM_COLORS = {
+  vf: '#16a34a',
+  voa: '#2563eb',
+  ev: '#eab308',
+  vr: '#dc2626',
+  own: '#064e3b',
+  visited: '#7c3aed',
+  default: '#e5e7eb',
+};
 
 function flag(iso) {
-  if (!iso || iso.length !== 2) return '🏳';
-  return [...iso.toUpperCase()].map(c =>
-    String.fromCodePoint(c.charCodeAt(0) + 127397)
-  ).join('');
+  if (!iso || iso.length !== 2) return '🏳️';
+  const base = 0x1F1E6 - 65;
+  return String.fromCodePoint(base + iso.toUpperCase().charCodeAt(0)) +
+         String.fromCodePoint(base + iso.toUpperCase().charCodeAt(1));
 }
 
-function normalize(item) {
-  const iso   = (item.iso || item.isoShortCode || item.code || item.country || '').toUpperCase();
-  const name  = item.name || item.countryName || item.country || iso;
-  const rank  = item.worldRank || item.rank || item.globalRank || 0;
-  const vf    = item.visaFree   ?? item.vf   ?? item.visa_free   ?? 0;
-  const voa   = item.visaOnArrival ?? item.voa ?? item.visa_on_arrival ?? 0;
-  const ev    = item.eVisa      ?? item.ev    ?? item.e_visa      ?? 0;
-  const vr    = item.visaRequired ?? item.vr  ?? item.visa_required ?? 0;
-  const total = vf + voa + ev + vr || item.mobilityScore || item.mobility || item.score || item.total || 0;
-  return { iso, name, rank, vf, voa, ev, vr, total };
+function norm(s) {
+  return (s || '').toLowerCase().trim();
 }
 
-async function apiFetch(path) {
-  const r = await fetch(API + path);
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  return r.json();
+async function apiFetch(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
+  const res = await fetch(API + path, { headers, ...opts });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err || res.statusText);
+  }
+  return res.json();
 }
 
-/* ─── State ─────────────────────────────────────────────────── */
 const state = {
-  raw: [],          // normalized passport list
-  filtered: [],     // after search
+  passports: [],
+  filtered: [],
   sort: 'rank',
   layout: 'grid',
   user: null,
   token: null,
+  myPassports: [],
+  visitedCountries: [],
+  privacy: {
+    passports: true,
+    visaMap: true,
+    visitedCountries: true,
+    visitCounter: true,
+    joinDate: true,
+    bestStats: true,
+    homeCity: false,
+  },
+  activeMap: null,
+  activeMapB: null,
+  detailData: null,
+  activeDestFilter: 'Visa free',
+  modalMode: 'passport',
+  modalSelected: null,
+  authMode: 'login',
 };
 
-/* Restore session */
-try {
-  state.user  = localStorage.getItem('pi_user');
-  state.token = localStorage.getItem('pi_token');
-} catch(_) {}
+let jvmLoaded = false;
+let jvmPromise = null;
 
-/* ─── DOM refs ──────────────────────────────────────────────── */
-const $ = id => document.getElementById(id);
-
-const rankingsGrid   = $('rankingsGrid');
-const searchInput    = $('searchInput');
-const searchClear    = $('searchClear');
-const authBtn        = $('authBtn');
-const passportOverlay = $('passportOverlay');
-const passportContent = $('passportContent');
-const authOverlay    = $('authOverlay');
-const toastWrap      = $('toastWrap');
-
-/* ─── Toast ─────────────────────────────────────────────────── */
-function toast(msg, type = 'info') {
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.textContent = msg;
-  toastWrap.appendChild(el);
-  setTimeout(() => el.remove(), 3500);
+function loadJVM() {
+  if (jvmLoaded) return Promise.resolve();
+  if (jvmPromise) return jvmPromise;
+  jvmPromise = new Promise((resolve, reject) => {
+    const check = () => {
+      if (typeof jsVectorMap !== 'undefined' && jsVectorMap.maps && jsVectorMap.maps.world) {
+        jvmLoaded = true;
+        resolve();
+      } else {
+        setTimeout(check, 100);
+      }
+    };
+    check();
+    setTimeout(() => reject(new Error('jsvectormap load timeout')), 10000);
+  });
+  return jvmPromise;
 }
 
-/* ─── Views ─────────────────────────────────────────────────── */
+function destroyActiveMap() {
+  if (state.activeMap) {
+    try { state.activeMap.destroy(); } catch(e) {}
+    state.activeMap = null;
+  }
+  if (state.activeMapB) {
+    try { state.activeMapB.destroy(); } catch(e) {}
+    state.activeMapB = null;
+  }
+}
+
+function initMap(container, fillMap, height) {
+  height = height || 380;
+  container.innerHTML = '';
+  const inner = document.createElement('div');
+  inner.style.height = height + 'px';
+  inner.style.width = '100%';
+  container.appendChild(inner);
+
+  let mapInstance = null;
+  try {
+    mapInstance = new jsVectorMap({
+      selector: inner,
+      map: 'world',
+      backgroundColor: 'transparent',
+      zoomOnScroll: false,
+      zoomButtons: false,
+      regionStyle: {
+        initial: { fill: JVM_COLORS.default, stroke: '#fff', strokeWidth: 0.5 },
+        hover: { fill: JVM_COLORS.default, fillOpacity: 0.8 },
+      },
+      series: { regions: [] },
+    });
+
+    if (fillMap && mapInstance.regions) {
+      Object.keys(fillMap).forEach(code => {
+        const color = fillMap[code];
+        const region = mapInstance.regions[code];
+        if (region && region.element && region.element.shape && region.element.shape.node) {
+          region.element.shape.node.setAttribute('fill', color);
+        } else {
+          const el = inner.querySelector('[data-code="' + code + '"]');
+          if (el) el.setAttribute('fill', color);
+        }
+      });
+    }
+  } catch(e) {
+    inner.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#6b7280;font-size:14px;">Map unavailable</div>';
+  }
+
+  return mapInstance;
+}
+
+function buildFillMap(destinations, ownIso) {
+  const fillMap = {};
+  const order = ['Visa required', 'ETA', 'Visa on arrival', 'Visa free'];
+  order.forEach(type => {
+    const list = destinations[type] || [];
+    const color = type === 'Visa free' ? JVM_COLORS.vf
+                : type === 'Visa on arrival' ? JVM_COLORS.voa
+                : type === 'ETA' ? JVM_COLORS.ev
+                : JVM_COLORS.vr;
+    list.forEach(d => {
+      if (d.isoShortCode) fillMap[d.isoShortCode.toUpperCase()] = color;
+    });
+  });
+  if (ownIso) fillMap[ownIso.toUpperCase()] = JVM_COLORS.own;
+  return fillMap;
+}
+
+function buildCombinedFillMap(passportList) {
+  const rank = { 'Visa free': 4, 'Visa on arrival': 3, 'ETA': 2, 'Visa required': 1 };
+  const best = {};
+  passportList.forEach(p => {
+    if (!p.destinations) return;
+    Object.keys(p.destinations).forEach(type => {
+      const list = p.destinations[type] || [];
+      list.forEach(d => {
+        const code = (d.isoShortCode || '').toUpperCase();
+        if (!code) return;
+        if (!best[code] || rank[type] > rank[best[code]]) best[code] = type;
+      });
+    });
+  });
+  const fillMap = {};
+  Object.keys(best).forEach(code => {
+    const type = best[code];
+    fillMap[code] = type === 'Visa free' ? JVM_COLORS.vf
+                  : type === 'Visa on arrival' ? JVM_COLORS.voa
+                  : type === 'ETA' ? JVM_COLORS.ev
+                  : JVM_COLORS.vr;
+  });
+  state.visitedCountries.forEach(c => {
+    const code = (c.isoShortCode || '').toUpperCase();
+    if (code) fillMap[code] = JVM_COLORS.visited;
+  });
+  return fillMap;
+}
+
+function showToast(msg, type) {
+  type = type || 'info';
+  const wrap = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transition = 'opacity 0.3s';
+    setTimeout(() => t.remove(), 350);
+  }, 3500);
+}
+
+function setActiveNavLink(viewName) {
+  document.querySelectorAll('.nav-link').forEach(l => {
+    l.classList.toggle('active', l.dataset.view === viewName);
+  });
+}
+
 function showView(name) {
+  destroyActiveMap();
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  const view = document.getElementById(`view-${name}`);
-  if (view) view.classList.add('active');
-  document.querySelector(`[data-view="${name}"]`)?.classList.add('active');
+  const el = document.getElementById('view-' + name);
+  if (el) el.classList.add('active');
+  setActiveNavLink(name);
+  window.scrollTo(0, 0);
 }
 
-/* ─── Render cards ──────────────────────────────────────────── */
-const MAX_SCORE = 195; /* ~total countries */
+function updateAuthState() {
+  const chip = document.getElementById('navUserChip');
+  const signInBtn = document.getElementById('navSignInBtn');
+  const profileLink = document.getElementById('navProfileLink');
+  if (state.user) {
+    chip.classList.remove('hidden');
+    signInBtn.classList.add('hidden');
+    document.getElementById('navUserAvatar').textContent = (state.user.username || 'U')[0].toUpperCase();
+    document.getElementById('navUserName').textContent = state.user.username || 'User';
+    profileLink.classList.remove('hidden');
+  } else {
+    chip.classList.add('hidden');
+    signInBtn.classList.remove('hidden');
+  }
+}
 
-function cardHTML(p) {
-  const f = flag(p.iso);
-  const pct = Math.round((p.total / MAX_SCORE) * 100);
+async function loadRankings() {
+  const grid = document.getElementById('rankingsGrid');
+  const loader = document.getElementById('rankingsLoader');
+  const empty = document.getElementById('rankingsEmpty');
+  grid.innerHTML = '';
+  loader.style.display = 'flex';
+  empty.classList.add('hidden');
+
+  try {
+    const data = await apiFetch('/rank');
+    const passports = (data.passports || []).map(p => ({
+      name: p.name,
+      iso: p.isoShortCode,
+      rank: p.worldRank,
+      total: p.mobilityScore,
+      vf: 0, voa: 0, ev: 0, vr: 0,
+    }));
+    state.passports = passports;
+    state.filtered = [...passports];
+    applySort(state.sort, false);
+    loader.style.display = 'none';
+    renderGrid();
+    populateCompareSelects();
+  } catch(e) {
+    loader.style.display = 'none';
+    showToast('Failed to load rankings: ' + e.message, 'error');
+  }
+}
+
+function applySort(sortKey, rerender) {
+  state.sort = sortKey;
+  document.querySelectorAll('.sort-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.sort === sortKey);
+  });
+  if (sortKey === 'rank') {
+    state.filtered.sort((a, b) => (a.rank || 999) - (b.rank || 999));
+  } else if (sortKey === 'name') {
+    state.filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  } else if (sortKey === 'vf') {
+    state.filtered.sort((a, b) => (b.total || 0) - (a.total || 0));
+  }
+  if (rerender !== false) renderGrid();
+}
+
+function applyFilter(query) {
+  const q = norm(query);
+  if (!q) {
+    state.filtered = [...state.passports];
+  } else {
+    state.filtered = state.passports.filter(p =>
+      norm(p.name).includes(q) || norm(p.iso).includes(q)
+    );
+  }
+  applySort(state.sort, false);
+  renderGrid();
+}
+
+function cardTemplate(p) {
+  const pct = Math.round(((p.total || 0) / MAX_SCORE) * 100);
+  const rank = p.rank || '—';
+  const isTop3 = p.rank && p.rank <= 3;
   return `
-    <div class="passport-card" data-iso="${p.iso}">
-      <div class="card-rank">
-        <span class="card-rank-num">${p.rank || '—'}</span>
-      </div>
-      <span class="card-flag">${f}</span>
-      <div class="card-name">${p.name}</div>
-      <div class="card-iso">${p.iso}</div>
-      <div class="card-score">
-        <span class="score-num">${p.total}</span>
-        <span class="score-label">destinations</span>
-      </div>
-      <div class="card-bar">
-        <div class="card-bar-fill" style="width:${pct}%"></div>
-      </div>
+    <div class="passport-card" data-iso="${p.iso}" tabindex="0" role="button" aria-label="${p.name}">
+      <div class="card-rank-badge${isTop3 ? ' top-3' : ''}">#${rank}</div>
+      <div class="card-flag">${flag(p.iso)}</div>
+      <div class="card-name">${p.name || ''}</div>
+      <div class="card-iso">${p.iso || ''}</div>
+      <div class="card-score">${p.total || 0}</div>
+      <div class="card-score-label">visa-free score</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
       <div class="card-chips">
-        ${p.vf  ? `<span class="chip chip-vf">VF ${p.vf}</span>` : ''}
-        ${p.voa ? `<span class="chip chip-voa">VoA ${p.voa}</span>` : ''}
-        ${p.ev  ? `<span class="chip chip-ev">eV ${p.ev}</span>` : ''}
-        ${p.vr  ? `<span class="chip chip-vr">VR ${p.vr}</span>` : ''}
+        <span class="chip chip-vf">VF ${p.vf || p.total || 0}</span>
+        <span class="chip chip-voa">VoA ${p.voa || 0}</span>
+        <span class="chip chip-ev">eV ${p.ev || 0}</span>
+        <span class="chip chip-vr">VR ${p.vr || 0}</span>
       </div>
     </div>`;
 }
 
-function rowHTML(p) {
-  const f = flag(p.iso);
-  const pct = Math.round((p.total / MAX_SCORE) * 100);
+function rowTemplate(p) {
+  const pct = Math.round(((p.total || 0) / MAX_SCORE) * 100);
   return `
-    <div class="passport-row" data-iso="${p.iso}">
-      <div class="row-rank">${p.rank || '—'}</div>
-      <div class="row-flag">${f}</div>
+    <div class="passport-row" data-iso="${p.iso}" tabindex="0" role="button" aria-label="${p.name}">
+      <div class="row-rank">#${p.rank || '—'}</div>
+      <div class="row-flag">${flag(p.iso)}</div>
       <div class="row-info">
-        <div class="row-name">${p.name}</div>
-        <div class="row-iso">${p.iso}</div>
+        <div class="row-name">${p.name || ''}</div>
+        <div class="row-iso">${p.iso || ''}</div>
       </div>
       <div class="row-bar-wrap">
-        <div class="row-bar"><div class="row-bar-fill" style="width:${pct}%"></div></div>
-        <div class="row-score">${p.total} destinations</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
       </div>
+      <div class="row-score">${p.total || 0}</div>
       <div class="row-chips">
-        ${p.vf  ? `<span class="chip chip-vf">VF ${p.vf}</span>` : ''}
-        ${p.voa ? `<span class="chip chip-voa">VoA ${p.voa}</span>` : ''}
+        <span class="chip chip-vf">VF ${p.vf || p.total || 0}</span>
+        <span class="chip chip-voa">VoA ${p.voa || 0}</span>
+        <span class="chip chip-ev">eV ${p.ev || 0}</span>
+        <span class="chip chip-vr">VR ${p.vr || 0}</span>
       </div>
     </div>`;
 }
 
 function renderGrid() {
-  if (!state.filtered.length) {
-    rankingsGrid.innerHTML = `
-      <div class="empty-state">
-        <span>🔍</span>
-        <p>No passports found for "<strong>${searchInput.value}</strong>"</p>
-      </div>`;
+  const grid = document.getElementById('rankingsGrid');
+  const empty = document.getElementById('rankingsEmpty');
+
+  if (state.filtered.length === 0) {
+    grid.innerHTML = '';
+    empty.classList.remove('hidden');
     return;
   }
+  empty.classList.add('hidden');
 
-  const isList = state.layout === 'list';
-  rankingsGrid.className = `rankings-grid${isList ? ' list-mode' : ''}`;
-  rankingsGrid.innerHTML = state.filtered
-    .map(p => isList ? rowHTML(p) : cardHTML(p))
-    .join('');
+  if (state.layout === 'grid') {
+    grid.className = 'passport-grid';
+    grid.innerHTML = state.filtered.map(cardTemplate).join('');
+  } else {
+    grid.className = 'passport-grid list-mode';
+    grid.innerHTML = state.filtered.map(rowTemplate).join('');
+  }
 
-  /* click to open detail */
-  rankingsGrid.querySelectorAll('[data-iso]').forEach(el => {
-    el.addEventListener('click', () => openPassport(el.dataset.iso));
+  grid.querySelectorAll('[data-iso]').forEach(el => {
+    el.addEventListener('click', () => openDetail(el.dataset.iso));
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') openDetail(el.dataset.iso); });
   });
 }
 
-/* ─── Sort & filter ─────────────────────────────────────────── */
-function applyFilter() {
-  const q = searchInput.value.trim().toLowerCase();
-  state.filtered = q
-    ? state.raw.filter(p =>
-        p.name.toLowerCase().includes(q) ||
-        p.iso.toLowerCase().includes(q))
-    : [...state.raw];
-
-  applySort();
-}
-
-function applySort() {
-  const s = state.sort;
-  state.filtered.sort((a, b) => {
-    if (s === 'rank')  return (a.rank || 999) - (b.rank || 999);
-    if (s === 'name')  return a.name.localeCompare(b.name);
-    if (s === 'vf')    return b.vf - a.vf;
-    return 0;
-  });
-  renderGrid();
-}
-
-/* ─── Load data ─────────────────────────────────────────────── */
-async function loadRankings() {
-  rankingsGrid.innerHTML = `
-    <div class="loader-state">
-      <div class="spinner"></div>
-      <p>Loading passport data…</p>
-    </div>`;
-
-  let data = [];
+async function openDetail(iso) {
+  showView('detail');
+  document.getElementById('detailBreadcrumbName').textContent = iso;
+  const content = document.getElementById('detailContent');
+  content.innerHTML = '<div class="loader-wrap"><div class="spinner"></div><p>Loading…</p></div>';
 
   try {
-    const res = await apiFetch('/rank');
-    const arr = res.passports || res.countries || (Array.isArray(res) ? res : []);
-    if (arr.length) data = arr;
-  } catch(_) {}
-
-  if (!data.length) {
-    try {
-      const res = await apiFetch('/');
-      const arr = Array.isArray(res) ? res : (res.data || []);
-      if (arr.length) data = arr;
-    } catch(_) {}
+    const data = await apiFetch('/country/' + iso);
+    state.detailData = data;
+    state.activeDestFilter = 'Visa free';
+    renderDetailContent(data);
+    document.getElementById('detailBreadcrumbName').textContent = data.name || iso;
+  } catch(e) {
+    content.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><h3>Failed to load</h3><p>' + e.message + '</p></div>';
   }
-
-  /* Fallback: load all countries, then fetch individual passports */
-  if (!data.length) {
-    try {
-      const countries = await apiFetch('/country');
-      const arr = Array.isArray(countries) ? countries : [];
-      data = arr.slice(0, 30); /* limit for performance */
-    } catch(_) {}
-  }
-
-  if (!data.length) {
-    rankingsGrid.innerHTML = `
-      <div class="empty-state">
-        <span>⚠️</span>
-        <p>Could not load data. Please try again later.</p>
-      </div>`;
-    return;
-  }
-
-  state.raw = data.map(normalize).filter(p => p.iso);
-  updateHeroStats();
-  populateCompareSelects();
-  applyFilter();
 }
 
-/* ─── Hero stats ────────────────────────────────────────────── */
-function updateHeroStats() {
-  const sorted  = [...state.raw].sort((a,b) => b.total - a.total);
-  const leader  = sorted[0];
-  $('statCountries').textContent = state.raw.length;
-  $('statTop').textContent       = leader ? leader.total : '—';
-  $('statLeader').textContent    = leader ? leader.name  : '—';
-}
+function renderDetailContent(data) {
+  const destinations = data.destinations || {};
+  const vfList = destinations['Visa free'] || [];
+  const voaList = destinations['Visa on arrival'] || [];
+  const evList = destinations['ETA'] || [];
+  const vrList = destinations['Visa required'] || [];
 
-/* ─── Passport Detail Modal ─────────────────────────────────── */
-async function openPassport(iso) {
-  passportContent.innerHTML = `
-    <div class="loader-state" style="padding:60px 0">
-      <div class="spinner"></div><p>Loading passport details…</p>
-    </div>`;
-  passportOverlay.classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
+  const passport = state.passports.find(p => p.iso === data.isoShortCode) || {};
+  const rankNum = passport.rank || '—';
 
-  let countryData = null;
-  try {
-    countryData = await apiFetch(`/country/${iso}`);
-  } catch(_) {}
+  const isLoggedIn = !!state.user;
+  const alreadyAdded = state.myPassports.some(p => p.iso === data.isoShortCode);
 
-  const local = state.raw.find(p => p.iso === iso) || {};
+  const addBtn = isLoggedIn
+    ? `<button class="btn-add-passport" id="detailAddBtn">${alreadyAdded ? '✓ Added' : '＋ Add to my passports'}</button>`
+    : '';
 
-  let merged = { ...local };
-  if (countryData) {
-    merged.name = countryData.name || merged.name;
-  }
+  const content = document.getElementById('detailContent');
+  content.innerHTML = `
+    <div class="detail-wrap">
+      <div class="detail-header">
+        <div class="detail-flag">${flag(data.isoShortCode)}</div>
+        <div class="detail-info">
+          <div class="detail-country-name">${data.name || ''}</div>
+          <div class="detail-iso">${data.isoShortCode || ''}</div>
+          <div class="detail-rank-badge">🏆 Rank #${rankNum}</div>
+        </div>
+        <div class="detail-actions">${addBtn}</div>
+      </div>
 
-  /* Parse destinations from country endpoint:
-     { "Visa free": [...], "Visa on arrival": [...], "ETA": [...], "Visa required": [...] } */
-  const destGroups = { vf: [], voa: [], ev: [], vr: [] };
-  if (countryData && countryData.destinations && typeof countryData.destinations === 'object') {
-    const raw = countryData.destinations;
-    (raw['Visa free']      || []).forEach(d => destGroups.vf.push(d));
-    (raw['Visa on arrival']|| []).forEach(d => destGroups.voa.push(d));
-    (raw['ETA']            || []).forEach(d => destGroups.ev.push(d));
-    (raw['Visa required']  || []).forEach(d => destGroups.vr.push(d));
-  }
-
-  renderPassportDetail(merged, destGroups);
-}
-
-const ACCESS_LABEL = {
-  'visa-free': 'Visa Free',     'vf': 'Visa Free',
-  'visa-on-arrival': 'Visa on Arrival', 'voa': 'Visa on Arrival',
-  'e-visa': 'E-Visa',           'ev': 'E-Visa',
-  'visa-required': 'Visa Required', 'vr': 'Visa Required',
-  'no-admission': 'No Admission', 'na': 'No Admission',
-};
-
-const ACCESS_CLASS = {
-  'visa-free': 'vf',  'vf': 'vf',
-  'visa-on-arrival': 'voa', 'voa': 'voa',
-  'e-visa': 'ev', 'ev': 'ev',
-  'visa-required': 'vr', 'vr': 'vr',
-  'no-admission': 'na', 'na': 'na',
-};
-
-function renderPassportDetail(p, destGroups) {
-  const f = flag(p.iso);
-
-  const groups = destGroups || { vf: [], voa: [], ev: [], vr: [] };
-  const hasDestinations = groups.vf.length + groups.voa.length + groups.ev.length + groups.vr.length > 0;
-
-  const vfCount  = groups.vf.length  || p.vf  || 0;
-  const voaCount = groups.voa.length || p.voa || 0;
-  const evCount  = groups.ev.length  || p.ev  || 0;
-  const vrCount  = groups.vr.length  || p.vr  || 0;
-
-  passportContent.innerHTML = `
-    <div class="detail-hero">
-      <div class="detail-flag">${f}</div>
-      <div class="detail-info">
-        <div class="detail-name">${p.name || p.iso}</div>
-        <div class="detail-meta">
-          <span class="detail-rank">🏆 Rank #${p.rank || '—'}</span>
-          <span class="detail-iso">${p.iso}</span>
+      <div class="detail-stat-row">
+        <div class="detail-stat-cell stat-vf${state.activeDestFilter === 'Visa free' ? ' active' : ''}" data-filter="Visa free">
+          <div class="detail-stat-number">${vfList.length}</div>
+          <div class="detail-stat-label">Visa Free</div>
+        </div>
+        <div class="detail-stat-cell stat-voa${state.activeDestFilter === 'Visa on arrival' ? ' active' : ''}" data-filter="Visa on arrival">
+          <div class="detail-stat-number">${voaList.length}</div>
+          <div class="detail-stat-label">Visa on Arrival</div>
+        </div>
+        <div class="detail-stat-cell stat-ev${state.activeDestFilter === 'ETA' ? ' active' : ''}" data-filter="ETA">
+          <div class="detail-stat-number">${evList.length}</div>
+          <div class="detail-stat-label">ETA / eVisa</div>
+        </div>
+        <div class="detail-stat-cell stat-vr${state.activeDestFilter === 'Visa required' ? ' active' : ''}" data-filter="Visa required">
+          <div class="detail-stat-number">${vrList.length}</div>
+          <div class="detail-stat-label">Visa Required</div>
         </div>
       </div>
-    </div>
 
-    <div class="detail-stats">
-      <div class="ds-item ds-vf" data-tab="vf">
-        <div class="ds-count">${vfCount}</div>
-        <div class="ds-label">Visa Free</div>
+      <div class="detail-columns">
+        <div class="map-card">
+          <div class="map-card-title">World Access Map</div>
+          <div class="map-container" id="detailMapContainer"></div>
+          <div class="map-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:${JVM_COLORS.vf}"></div>Visa Free</div>
+            <div class="legend-item"><div class="legend-dot" style="background:${JVM_COLORS.voa}"></div>Visa on Arrival</div>
+            <div class="legend-item"><div class="legend-dot" style="background:${JVM_COLORS.ev}"></div>ETA / eVisa</div>
+            <div class="legend-item"><div class="legend-dot" style="background:${JVM_COLORS.vr}"></div>Visa Required</div>
+            <div class="legend-item"><div class="legend-dot" style="background:${JVM_COLORS.own}"></div>Home Country</div>
+          </div>
+        </div>
+
+        <div class="destinations-card">
+          <div class="destinations-header">
+            <div class="destinations-title">Destinations</div>
+            <input class="dest-search" id="destSearch" type="text" placeholder="Search destinations…" autocomplete="off" />
+          </div>
+          <div class="dest-filter-chips">
+            <button class="dest-filter-chip chip-vf${state.activeDestFilter === 'Visa free' ? ' active' : ''}" data-filter="Visa free">VF ${vfList.length}</button>
+            <button class="dest-filter-chip chip-voa${state.activeDestFilter === 'Visa on arrival' ? ' active' : ''}" data-filter="Visa on arrival">VoA ${voaList.length}</button>
+            <button class="dest-filter-chip chip-ev${state.activeDestFilter === 'ETA' ? ' active' : ''}" data-filter="ETA">ETA ${evList.length}</button>
+            <button class="dest-filter-chip chip-vr${state.activeDestFilter === 'Visa required' ? ' active' : ''}" data-filter="Visa required">VR ${vrList.length}</button>
+          </div>
+          <div class="dest-list" id="destList"></div>
+        </div>
       </div>
-      <div class="ds-item ds-voa" data-tab="voa">
-        <div class="ds-count">${voaCount}</div>
-        <div class="ds-label">Visa on Arrival</div>
-      </div>
-      <div class="ds-item ds-ev" data-tab="ev">
-        <div class="ds-count">${evCount}</div>
-        <div class="ds-label">E-Visa</div>
-      </div>
-      <div class="ds-item ds-vr" data-tab="vr">
-        <div class="ds-count">${vrCount}</div>
-        <div class="ds-label">Visa Required</div>
-      </div>
-    </div>
+    </div>`;
 
-    ${hasDestinations ? `
-    <div class="detail-tabs">
-      <button class="detail-tab active" data-tab="vf">Visa Free (${vfCount})</button>
-      <button class="detail-tab" data-tab="voa">Visa on Arrival (${voaCount})</button>
-      <button class="detail-tab" data-tab="ev">E-Visa (${evCount})</button>
-      <button class="detail-tab" data-tab="vr">Visa Required (${vrCount})</button>
-    </div>
-    <div class="dest-search-wrap">
-      <input type="text" class="dest-search" id="destSearch" placeholder="Search destinations…">
-    </div>
-    <div class="detail-list" id="destList"></div>
-    ` : `
-    <div style="padding:32px 24px; color: var(--c-muted); text-align:center;">
-      <p>Detailed destination data is not available for this passport.<br>
-      Score: <strong>${p.total}</strong> accessible destinations.</p>
-    </div>
-    `}`;
+  renderDestList(destinations, state.activeDestFilter, '');
 
-  /* Tab switching */
-  let activeTab = 'vf';
+  const fillMap = buildFillMap(destinations, data.isoShortCode);
 
-  function renderDestList(tab, query = '') {
-    const list = document.getElementById('destList');
-    if (!list) return;
-    const items = groups[tab] || [];
-    const q = query.toLowerCase();
-    const filtered = q
-      ? items.filter(d => (d.name || d.isoShortCode || d.iso || '').toLowerCase().includes(q))
-      : items;
-
-    if (!filtered.length) {
-      list.innerHTML = `<div class="empty-state" style="padding:32px 0;font-size:.875rem">No destinations in this category</div>`;
-      return;
+  loadJVM().then(() => {
+    const container = document.getElementById('detailMapContainer');
+    if (container) {
+      destroyActiveMap();
+      state.activeMap = initMap(container, fillMap, 340);
     }
+  }).catch(() => {});
 
-    const tabLabels = { vf: 'Visa Free', voa: 'Visa on Arrival', ev: 'ETA', vr: 'Visa Required' };
-    list.innerHTML = filtered.map(d => {
-      const dIso  = (d.isoShortCode || d.iso || d.code || '').toUpperCase();
-      const dName = d.name || d.countryName || dIso;
-      return `
-        <div class="dest-item">
-          <span class="dest-flag">${flag(dIso)}</span>
-          <span class="dest-name">${dName}</span>
-          <span class="dest-badge badge-${tab}">${tabLabels[tab] || tab}</span>
-        </div>`;
-    }).join('');
-  }
-
-  if (hasDestinations) {
-    renderDestList('vf');
-
-    passportContent.querySelectorAll('.detail-tab').forEach(btn => {
-      btn.addEventListener('click', () => {
-        passportContent.querySelectorAll('.detail-tab').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        activeTab = btn.dataset.tab;
-        const q = document.getElementById('destSearch')?.value || '';
-        renderDestList(activeTab, q);
+  content.querySelectorAll('.detail-stat-cell').forEach(cell => {
+    cell.addEventListener('click', () => {
+      state.activeDestFilter = cell.dataset.filter;
+      content.querySelectorAll('.detail-stat-cell').forEach(c => c.classList.remove('active'));
+      cell.classList.add('active');
+      content.querySelectorAll('.dest-filter-chip').forEach(c => {
+        c.classList.toggle('active', c.dataset.filter === state.activeDestFilter);
       });
+      const destSearchEl = document.getElementById('destSearch');
+      renderDestList(destinations, state.activeDestFilter, destSearchEl ? destSearchEl.value : '');
     });
+  });
 
-    passportContent.querySelectorAll('.ds-item[data-tab]').forEach(el => {
-      el.addEventListener('click', () => {
-        const tab = el.dataset.tab;
-        passportContent.querySelectorAll('.detail-tab').forEach(b => {
-          b.classList.toggle('active', b.dataset.tab === tab);
-        });
-        activeTab = tab;
-        renderDestList(activeTab);
+  content.querySelectorAll('.dest-filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      state.activeDestFilter = chip.dataset.filter;
+      content.querySelectorAll('.dest-filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      content.querySelectorAll('.detail-stat-cell').forEach(c => {
+        c.classList.toggle('active', c.dataset.filter === state.activeDestFilter);
       });
+      const destSearchEl = document.getElementById('destSearch');
+      renderDestList(destinations, state.activeDestFilter, destSearchEl ? destSearchEl.value : '');
     });
+  });
 
-    const destSearch = document.getElementById('destSearch');
-    if (destSearch) {
-      destSearch.addEventListener('input', () => {
-        renderDestList(activeTab, destSearch.value);
-      });
-    }
+  const destSearchEl = document.getElementById('destSearch');
+  if (destSearchEl) {
+    destSearchEl.addEventListener('input', () => {
+      renderDestList(destinations, state.activeDestFilter, destSearchEl.value);
+    });
+  }
+
+  const addBtn = document.getElementById('detailAddBtn');
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      if (alreadyAdded) return;
+      const passportEntry = {
+        name: data.name,
+        iso: data.isoShortCode,
+        rank: rankNum,
+        total: passport.total || 0,
+        destinations: data.destinations,
+      };
+      state.myPassports.push(passportEntry);
+      saveLocal();
+      addBtn.textContent = '✓ Added';
+      showToast(data.name + ' added to your passports', 'success');
+    });
   }
 }
 
-function closePassport() {
-  passportOverlay.classList.add('hidden');
-  document.body.style.overflow = '';
-}
-
-/* ─── Auth ──────────────────────────────────────────────────── */
-function openAuth() { authOverlay.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
-function closeAuth() { authOverlay.classList.add('hidden'); document.body.style.overflow = ''; }
-
-function updateAuthBtn() {
-  if (state.user) {
-    authBtn.textContent = state.user;
-    authBtn.classList.add('logged-in');
-  } else {
-    authBtn.textContent = 'Sign In';
-    authBtn.classList.remove('logged-in');
-  }
-}
-
-async function doLogin() {
-  const username = $('loginUser').value.trim();
-  const password = $('loginPass').value;
-  const err = $('loginErr');
-  err.classList.add('hidden');
-
-  if (!username || !password) {
-    err.textContent = 'Please fill in all fields.';
-    err.classList.remove('hidden');
+function renderDestList(destinations, filterType, query) {
+  const list = document.getElementById('destList');
+  if (!list) return;
+  const items = (destinations[filterType] || []).filter(d => {
+    if (!query) return true;
+    return norm(d.name).includes(norm(query));
+  });
+  if (items.length === 0) {
+    list.innerHTML = '<div style="padding:24px;text-align:center;color:#6b7280;font-size:13px;">No destinations found.</div>';
     return;
   }
+  const typeClass = filterType === 'Visa free' ? 'chip-vf'
+                  : filterType === 'Visa on arrival' ? 'chip-voa'
+                  : filterType === 'ETA' ? 'chip-ev'
+                  : 'chip-vr';
+  const shortLabel = filterType === 'Visa free' ? 'VF'
+                   : filterType === 'Visa on arrival' ? 'VoA'
+                   : filterType === 'ETA' ? 'ETA'
+                   : 'VR';
+  list.innerHTML = items.map(d => `
+    <div class="dest-item">
+      <span class="dest-flag">${flag(d.isoShortCode)}</span>
+      <span class="dest-name">${d.name || d.isoShortCode || ''}</span>
+      <span class="dest-type chip ${typeClass}">${shortLabel}</span>
+    </div>`).join('');
+}
+
+function populateCompareSelects() {
+  const selA = document.getElementById('compareA');
+  const selB = document.getElementById('compareB');
+  if (!selA || !selB) return;
+  const opts = state.passports.map(p =>
+    `<option value="${p.iso}">${flag(p.iso)} ${p.name}</option>`
+  ).join('');
+  selA.innerHTML = '<option value="">Select Passport A…</option>' + opts;
+  selB.innerHTML = '<option value="">Select Passport B…</option>' + opts;
+}
+
+async function doCompare() {
+  const isoA = document.getElementById('compareA').value;
+  const isoB = document.getElementById('compareB').value;
+  const result = document.getElementById('compareResult');
+
+  if (!isoA || !isoB) { showToast('Please select two passports', 'info'); return; }
+  if (isoA === isoB) { showToast('Please select two different passports', 'info'); return; }
+
+  result.innerHTML = '<div class="loader-wrap"><div class="spinner"></div><p>Loading…</p></div>';
 
   try {
-    const r = await fetch(`${API}/user/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
+    const [dataA, dataB] = await Promise.all([
+      apiFetch('/country/' + isoA),
+      apiFetch('/country/' + isoB),
+    ]);
 
-    if (!r.ok) {
-      const msg = await r.text().catch(() => 'Login failed');
-      throw new Error(msg || `Error ${r.status}`);
+    const passA = state.passports.find(p => p.iso === isoA) || {};
+    const passB = state.passports.find(p => p.iso === isoB) || {};
+
+    const destA = dataA.destinations || {};
+    const destB = dataB.destinations || {};
+
+    const countA = {
+      vf: (destA['Visa free'] || []).length,
+      voa: (destA['Visa on arrival'] || []).length,
+      ev: (destA['ETA'] || []).length,
+      vr: (destA['Visa required'] || []).length,
+    };
+    const countB = {
+      vf: (destB['Visa free'] || []).length,
+      voa: (destB['Visa on arrival'] || []).length,
+      ev: (destB['ETA'] || []).length,
+      vr: (destB['Visa required'] || []).length,
+    };
+
+    countA.total = countA.vf + countA.voa + countA.ev + countA.vr;
+    countB.total = countB.vf + countB.voa + countB.ev + countB.vr;
+
+    const winnerByScore = (passA.total || countA.vf) >= (passB.total || countB.vf) ? 'A' : 'B';
+    const winnerData = winnerByScore === 'A' ? dataA : dataB;
+    const diff = Math.abs((passA.total || countA.vf) - (passB.total || countB.vf));
+
+    function tableRow(label, valA, valB, higherIsBetter) {
+      higherIsBetter = higherIsBetter !== false;
+      const numA = typeof valA === 'number' ? valA : parseInt(valA) || 0;
+      const numB = typeof valB === 'number' ? valB : parseInt(valB) || 0;
+      const aWins = higherIsBetter ? numA > numB : numA < numB;
+      const bWins = higherIsBetter ? numB > numA : numB < numA;
+      const diffVal = numA - numB;
+      const diffStr = diffVal === 0 ? '—'
+        : diffVal > 0
+          ? '<span class="diff-pos">+' + diffVal + '</span>'
+          : '<span class="diff-neg">' + diffVal + '</span>';
+      return `<tr class="${aWins || bWins ? 'row-winner' : ''}">
+        <td>${label}</td>
+        <td><strong>${aWins ? '✓ ' : ''}${valA}</strong></td>
+        <td><strong>${bWins ? '✓ ' : ''}${valB}</strong></td>
+        <td>${diffStr}</td>
+      </tr>`;
     }
 
-    const data = await r.json().catch(() => ({}));
-    state.user  = username;
-    state.token = data.token || data.accessToken || data.jwt || 'ok';
-    localStorage.setItem('pi_user',  state.user);
-    localStorage.setItem('pi_token', state.token);
-    updateAuthBtn();
-    closeAuth();
-    toast(`Welcome back, ${username}! 👋`, 'success');
+    result.innerHTML = `
+      <div class="winner-banner">
+        <div class="winner-flags">
+          <span>${flag(isoA)}</span>
+          <span class="winner-vs">VS</span>
+          <span>${flag(isoB)}</span>
+        </div>
+        <div class="winner-names">
+          <span class="winner-name${winnerByScore === 'A' ? ' winner' : ''}">${dataA.name}</span>
+          <span style="color:rgba(255,255,255,0.3);font-weight:700;">vs</span>
+          <span class="winner-name${winnerByScore === 'B' ? ' winner' : ''}">${dataB.name}</span>
+        </div>
+        <div class="winner-announce">${winnerData.name} has the stronger passport</div>
+        <div class="winner-diff">+${diff} more visa-free destinations</div>
+      </div>
+
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>${flag(isoA)} ${dataA.name}</th>
+            <th>${flag(isoB)} ${dataB.name}</th>
+            <th>Diff (A−B)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRow('Total Destinations', countA.total, countB.total)}
+          ${tableRow('Visa Free', countA.vf, countB.vf)}
+          ${tableRow('Visa on Arrival', countA.voa, countB.voa)}
+          ${tableRow('ETA / eVisa', countA.ev, countB.ev)}
+          ${tableRow('Visa Required', countA.vr, countB.vr, false)}
+          ${tableRow('Global Rank', passA.rank || '—', passB.rank || '—', false)}
+        </tbody>
+      </table>
+
+      <div class="compare-maps">
+        <div class="compare-map-card">
+          <div class="compare-map-title">${flag(isoA)} ${dataA.name}</div>
+          <div class="map-container" id="compareMapA"></div>
+        </div>
+        <div class="compare-map-card">
+          <div class="compare-map-title">${flag(isoB)} ${dataB.name}</div>
+          <div class="map-container" id="compareMapB"></div>
+        </div>
+      </div>`;
+
+    loadJVM().then(() => {
+      destroyActiveMap();
+      const fillA = buildFillMap(destA, isoA);
+      const fillB = buildFillMap(destB, isoB);
+      const mapContA = document.getElementById('compareMapA');
+      const mapContB = document.getElementById('compareMapB');
+      if (mapContA) state.activeMap = initMap(mapContA, fillA, 280);
+      if (mapContB) state.activeMapB = initMap(mapContB, fillB, 280);
+    }).catch(() => {});
+
   } catch(e) {
-    err.textContent = e.message || 'Login failed. Please try again.';
-    err.classList.remove('hidden');
+    result.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><h3>Error</h3><p>' + e.message + '</p></div>';
   }
 }
 
-async function doRegister() {
-  const username = $('regUser').value.trim();
-  const password = $('regPass').value;
-  const err = $('regErr');
-  err.classList.add('hidden');
+async function doLogin(username, password) {
+  const data = await apiFetch('/user/login', {
+    method: 'POST',
+    body: JSON.stringify({ username, password }),
+  });
+  state.user = data.user || { username };
+  state.token = data.token || data.access_token || '';
+  localStorage.setItem('pr_user', JSON.stringify(state.user));
+  localStorage.setItem('pr_token', state.token);
+  updateAuthState();
+  showToast('Welcome back, ' + (state.user.username || username) + '!', 'success');
+  showView('rankings');
+}
 
-  if (!username || !password) {
-    err.textContent = 'Please fill in all fields.';
-    err.classList.remove('hidden');
-    return;
-  }
-
-  if (password.length < 6) {
-    err.textContent = 'Password must be at least 6 characters.';
-    err.classList.remove('hidden');
-    return;
-  }
-
-  try {
-    const r = await fetch(`${API}/user/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
-
-    if (!r.ok) {
-      const msg = await r.text().catch(() => 'Registration failed');
-      throw new Error(msg || `Error ${r.status}`);
-    }
-
-    toast(`Account created! You can now sign in.`, 'success');
-
-    /* Auto-switch to login tab */
-    document.querySelector('.auth-tab[data-tab="login"]').click();
-    $('loginUser').value = username;
-  } catch(e) {
-    err.textContent = e.message || 'Registration failed. Please try again.';
-    err.classList.remove('hidden');
-  }
+async function doRegister(username, password) {
+  const data = await apiFetch('/user/register', {
+    method: 'POST',
+    body: JSON.stringify({ username, password }),
+  });
+  state.user = data.user || { username };
+  state.token = data.token || data.access_token || '';
+  localStorage.setItem('pr_user', JSON.stringify(state.user));
+  localStorage.setItem('pr_token', state.token);
+  updateAuthState();
+  showToast('Account created! Welcome, ' + (state.user.username || username) + '!', 'success');
+  showView('profile');
 }
 
 function doLogout() {
   state.user = null;
   state.token = null;
-  localStorage.removeItem('pi_user');
-  localStorage.removeItem('pi_token');
-  updateAuthBtn();
-  toast('Signed out.', 'info');
+  localStorage.removeItem('pr_user');
+  localStorage.removeItem('pr_token');
+  updateAuthState();
+  showToast('Signed out', 'info');
+  showView('rankings');
 }
 
-/* ─── Compare ───────────────────────────────────────────────── */
-function populateCompareSelects() {
-  const options = state.raw
-    .sort((a,b) => a.name.localeCompare(b.name))
-    .map(p => `<option value="${p.iso}">${flag(p.iso)} ${p.name}</option>`)
-    .join('');
-  const base = '<option value="">Select country…</option>';
-  $('compareA').innerHTML = base + options;
-  $('compareB').innerHTML = base + options;
+function saveLocal() {
+  localStorage.setItem('pr_myPassports', JSON.stringify(state.myPassports));
+  localStorage.setItem('pr_visitedCountries', JSON.stringify(state.visitedCountries));
+  localStorage.setItem('pr_privacy', JSON.stringify(state.privacy));
 }
 
-function doCompare() {
-  const isoA = $('compareA').value;
-  const isoB = $('compareB').value;
-  const result = $('compareResult');
+function restoreSession() {
+  try {
+    const u = localStorage.getItem('pr_user');
+    const t = localStorage.getItem('pr_token');
+    if (u) state.user = JSON.parse(u);
+    if (t) state.token = t;
+    const mp = localStorage.getItem('pr_myPassports');
+    if (mp) state.myPassports = JSON.parse(mp);
+    const vc = localStorage.getItem('pr_visitedCountries');
+    if (vc) state.visitedCountries = JSON.parse(vc);
+    const pv = localStorage.getItem('pr_privacy');
+    if (pv) state.privacy = Object.assign({}, state.privacy, JSON.parse(pv));
+  } catch(e) {}
+  updateAuthState();
+}
 
-  if (!isoA || !isoB) { toast('Please select both passports.', 'error'); return; }
-  if (isoA === isoB)  { toast('Please select two different passports.', 'error'); return; }
+function renderProfile() {
+  if (!state.user) {
+    showView('auth');
+    return;
+  }
+  showView('profile');
+  const content = document.getElementById('profileContent');
+  const username = state.user.username || 'User';
+  const avatarLetter = username[0].toUpperCase();
+  const bestPassport = state.myPassports.reduce((best, p) => (!best || (p.rank && p.rank < best.rank)) ? p : best, null);
+  const bestVF = bestPassport ? (bestPassport.total || 0) : 0;
+  const bestRank = bestPassport ? (bestPassport.rank || '—') : '—';
+  const worldPct = bestVF ? Math.round((bestVF / 195) * 100) : 0;
+  const joinDate = state.user.joinDate || '2026';
 
-  const a = state.raw.find(p => p.iso === isoA);
-  const b = state.raw.find(p => p.iso === isoB);
-  if (!a || !b) return;
+  const myPassportsHtml = state.myPassports.length === 0
+    ? '<div style="padding:16px;text-align:center;color:#6b7280;font-size:13px;">No passports added yet.</div>'
+    : state.myPassports.map((p, i) => `
+        <div class="passport-mini">
+          <div class="passport-mini-flag">${flag(p.iso)}</div>
+          <div class="passport-mini-info">
+            <div class="passport-mini-name">${p.name || p.iso}</div>
+            <div class="passport-mini-rank">Rank #${p.rank || '—'} · Score ${p.total || 0}</div>
+          </div>
+          <button class="passport-mini-remove" data-idx="${i}" title="Remove">✕</button>
+        </div>`).join('');
 
-  const winner = a.total > b.total ? a : b;
+  const visitedHtml = state.visitedCountries.length === 0
+    ? '<div style="padding:16px;text-align:center;color:#6b7280;font-size:13px;">No visited countries added yet.</div>'
+    : state.visitedCountries.map((c, i) => `
+        <div class="visited-chip">
+          <span>${flag(c.isoShortCode || c.iso)}</span>
+          <span>${c.name || c.iso}</span>
+          <button class="visited-chip-remove" data-idx="${i}" title="Remove">✕</button>
+        </div>`).join('');
 
-  result.classList.remove('hidden');
-  result.innerHTML = `
-    ${comparePassportHTML(a, b.total)}
-    <div class="compare-mid">
-      <div class="cmp-mid-vs">VS</div>
-      <div class="cmp-winner">
-        ${a.total === b.total ? 'Tied!' : `${winner.name} wins by ${Math.abs(a.total - b.total)} destinations`}
+  const maxVF = 179;
+  const totalDest = bestPassport
+    ? ((bestPassport.vf || bestVF) + (bestPassport.voa || 0) + (bestPassport.ev || 0) + (bestPassport.vr || 0))
+    : 195;
+
+  function travelBar(label, value, total, color) {
+    const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+    return `<div class="travel-stat-bar">
+      <div class="travel-stat-label">
+        <span>${label}</span>
+        <span style="color:${color}">${value}</span>
       </div>
-    </div>
-    ${comparePassportHTML(b, a.total)}`;
-}
+      <div class="travel-bar">
+        <div class="travel-fill" style="width:${pct}%;background:${color}"></div>
+      </div>
+    </div>`;
+  }
 
-function comparePassportHTML(p, otherTotal) {
-  const better = p.total >= otherTotal;
-  return `
-    <div class="compare-passport">
-      <div class="cmp-header">
-        <span class="cmp-flag">${flag(p.iso)}</span>
+  const vfCount = bestPassport ? (bestPassport.vf || bestVF) : 0;
+  const voaCount = bestPassport ? (bestPassport.voa || 0) : 0;
+  const evCount = bestPassport ? (bestPassport.ev || 0) : 0;
+  const vrCount = bestPassport ? (bestPassport.vr || 0) : 0;
+  const travelTotal = vfCount + voaCount + evCount + vrCount || 1;
+
+  content.innerHTML = `
+    <div class="profile-content">
+      <div class="profile-hero">
+        <div class="profile-hero-top">
+          <div class="profile-avatar">${avatarLetter}</div>
+          <div class="profile-identity">
+            <div class="profile-name">${username}</div>
+            <div class="profile-handle">@${username.toLowerCase()}</div>
+            <div class="profile-joined">Joined ${joinDate}</div>
+          </div>
+          <div class="profile-hero-actions">
+            <button id="profileShareBtn">🔗 Share profile</button>
+            <button id="profilePrivacyBtn">⚙ Privacy settings</button>
+          </div>
+        </div>
+        <div class="profile-meta-stats">
+          <div class="profile-meta-stat">
+            <span class="profile-meta-n">${state.myPassports.length}</span>
+            <span class="profile-meta-l">Passports</span>
+          </div>
+          <div class="profile-meta-stat">
+            <span class="profile-meta-n">${state.visitedCountries.length}</span>
+            <span class="profile-meta-l">Countries</span>
+          </div>
+          <div class="profile-meta-stat">
+            <span class="profile-meta-n">${bestVF}</span>
+            <span class="profile-meta-l">Best Visa-Free</span>
+          </div>
+          <div class="profile-meta-stat">
+            <span class="profile-meta-n">${worldPct}%</span>
+            <span class="profile-meta-l">World</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-columns">
         <div>
-          <div class="cmp-name">${p.name}</div>
-          <div class="cmp-rank">Rank #${p.rank || '—'} · ${p.total} destinations ${better ? '✓' : ''}</div>
+          <div class="card" style="margin-bottom:20px;">
+            <div class="card-header">
+              <span class="card-title">World Visa Map</span>
+            </div>
+            <div class="map-container" id="profileMapContainer"></div>
+            <div class="map-legend" style="padding:12px 20px;">
+              <div class="legend-item"><div class="legend-dot" style="background:${JVM_COLORS.vf}"></div>Visa Free</div>
+              <div class="legend-item"><div class="legend-dot" style="background:${JVM_COLORS.voa}"></div>Visa on Arrival</div>
+              <div class="legend-item"><div class="legend-dot" style="background:${JVM_COLORS.ev}"></div>ETA</div>
+              <div class="legend-item"><div class="legend-dot" style="background:${JVM_COLORS.vr}"></div>Visa Required</div>
+              <div class="legend-item"><div class="legend-dot" style="background:${JVM_COLORS.visited}"></div>Visited</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Visited Countries</span>
+              <button class="btn-outline" id="addVisitedBtn" style="font-size:12px;padding:6px 12px;">＋ Add</button>
+            </div>
+            <div class="visited-chips" id="visitedChipsList">
+              ${visitedHtml}
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="cmp-stats">
-        <div class="cmp-stat cmp-stat-vf">
-          <span>Visa Free</span><strong>${p.vf}</strong>
-        </div>
-        <div class="cmp-stat cmp-stat-voa">
-          <span>Visa on Arrival</span><strong>${p.voa}</strong>
-        </div>
-        <div class="cmp-stat cmp-stat-ev">
-          <span>E-Visa</span><strong>${p.ev}</strong>
-        </div>
-        <div class="cmp-stat cmp-stat-vr">
-          <span>Visa Required</span><strong>${p.vr}</strong>
+
+        <div>
+          <div class="card" style="margin-bottom:20px;">
+            <div class="card-header">
+              <span class="card-title">My Passports</span>
+            </div>
+            <div class="card-body" id="myPassportsList">
+              ${myPassportsHtml}
+            </div>
+            <div style="padding:0 16px 16px;">
+              <button class="btn-add-item" id="addPassportBtn">＋ Add passport</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Travel Stats</span>
+            </div>
+            <div class="card-body">
+              ${travelBar('Visa Free', vfCount, travelTotal, JVM_COLORS.vf)}
+              ${travelBar('Visa on Arrival', voaCount, travelTotal, JVM_COLORS.voa)}
+              ${travelBar('ETA / eVisa', evCount, travelTotal, JVM_COLORS.ev)}
+              ${travelBar('Visa Required', vrCount, travelTotal, JVM_COLORS.vr)}
+            </div>
+          </div>
         </div>
       </div>
     </div>`;
+
+  content.querySelector('#profileShareBtn').addEventListener('click', () => {
+    const url = 'passportrank.app/u/' + username.toLowerCase();
+    navigator.clipboard.writeText(url).catch(() => {});
+    showToast('Profile link copied!', 'success');
+  });
+
+  content.querySelector('#profilePrivacyBtn').addEventListener('click', () => {
+    showView('privacy');
+    renderPrivacySettings();
+  });
+
+  content.querySelector('#addPassportBtn').addEventListener('click', () => {
+    openAddPassport('passport');
+  });
+
+  const addVisitedBtn = content.querySelector('#addVisitedBtn');
+  if (addVisitedBtn) {
+    addVisitedBtn.addEventListener('click', () => openAddPassport('visited'));
+  }
+
+  content.querySelectorAll('.passport-mini-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      state.myPassports.splice(idx, 1);
+      saveLocal();
+      renderProfile();
+      showToast('Passport removed', 'info');
+    });
+  });
+
+  content.querySelectorAll('.visited-chip-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      state.visitedCountries.splice(idx, 1);
+      saveLocal();
+      renderProfile();
+      showToast('Country removed', 'info');
+    });
+  });
+
+  const passportsWithDest = state.myPassports.filter(p => p.destinations);
+  if (passportsWithDest.length > 0) {
+    const combinedFill = buildCombinedFillMap(passportsWithDest);
+    loadJVM().then(() => {
+      const container = document.getElementById('profileMapContainer');
+      if (container) {
+        destroyActiveMap();
+        state.activeMap = initMap(container, combinedFill, 300);
+      }
+    }).catch(() => {});
+  } else {
+    const container = document.getElementById('profileMapContainer');
+    if (container) {
+      loadJVM().then(() => {
+        destroyActiveMap();
+        state.activeMap = initMap(container, {}, 300);
+      }).catch(() => {});
+    }
+  }
 }
 
-/* ─── Event Listeners ───────────────────────────────────────── */
+function renderPrivacySettings() {
+  const publicLinkUrl = document.getElementById('publicLinkUrl');
+  if (publicLinkUrl && state.user) {
+    publicLinkUrl.textContent = 'passportrank.app/u/' + (state.user.username || 'user').toLowerCase();
+  }
 
-/* Nav view switching */
-document.querySelectorAll('.nav-link[data-view]').forEach(link => {
-  link.addEventListener('click', e => {
-    e.preventDefault();
-    showView(link.dataset.view);
+  document.querySelectorAll('.toggle-pill').forEach(pill => {
+    const key = pill.dataset.key;
+    if (key) {
+      if (state.privacy[key]) {
+        pill.classList.add('on');
+      } else {
+        pill.classList.remove('on');
+      }
+    }
   });
-});
+}
 
-$('navLogo').addEventListener('click', e => {
-  e.preventDefault();
-  showView('rankings');
-});
+function openAddPassport(mode) {
+  state.modalMode = mode || 'passport';
+  state.modalSelected = null;
 
-/* Sort tabs */
-document.querySelectorAll('.sort-tab').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.sort-tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.sort = btn.dataset.sort;
-    applySort();
+  const overlay = document.getElementById('addPassportOverlay');
+  overlay.classList.remove('hidden');
+
+  document.getElementById('modalTabPassport').classList.toggle('active', mode === 'passport');
+  document.getElementById('modalTabVisited').classList.toggle('active', mode === 'visited');
+  document.getElementById('modalSearch').value = '';
+  document.getElementById('modalConfirmBtn').disabled = true;
+
+  const confirmBtn = document.getElementById('modalConfirmBtn');
+  confirmBtn.textContent = mode === 'passport' ? '＋ Add to my passports' : '＋ Add visited country';
+
+  renderModalGrid('');
+}
+
+function renderModalGrid(query) {
+  const grid = document.getElementById('modalGrid');
+  let items = state.passports;
+
+  if (query) {
+    items = items.filter(p => norm(p.name).includes(norm(query)) || norm(p.iso).includes(norm(query)));
+  } else {
+    const popular = POPULAR_ISOS;
+    const popularItems = popular.map(iso => items.find(p => p.iso === iso)).filter(Boolean);
+    const others = items.filter(p => !popular.includes(p.iso));
+    items = [...popularItems, ...others];
+  }
+
+  items = items.slice(0, 48);
+
+  grid.innerHTML = items.map(p => `
+    <div class="modal-item${state.modalSelected && state.modalSelected.iso === p.iso ? ' selected' : ''}" data-iso="${p.iso}">
+      <div class="modal-item-flag">${flag(p.iso)}</div>
+      <div class="modal-item-name">${p.name || p.iso}</div>
+      <div class="modal-item-meta">Rank #${p.rank || '—'} · ${p.total || 0}</div>
+    </div>`).join('');
+
+  grid.querySelectorAll('.modal-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const iso = item.dataset.iso;
+      const passport = state.passports.find(p => p.iso === iso);
+      state.modalSelected = passport;
+      grid.querySelectorAll('.modal-item').forEach(i => i.classList.remove('selected'));
+      item.classList.add('selected');
+      document.getElementById('modalConfirmBtn').disabled = false;
+    });
   });
-});
+}
 
-/* Layout toggle */
-document.querySelectorAll('.layout-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.layout = btn.dataset.layout;
+function addPassportToCollection() {
+  if (!state.modalSelected) return;
+  if (state.modalMode === 'passport') {
+    const already = state.myPassports.some(p => p.iso === state.modalSelected.iso);
+    if (already) { showToast('Passport already added', 'info'); return; }
+    state.myPassports.push({ ...state.modalSelected });
+    saveLocal();
+    showToast(state.modalSelected.name + ' added to your passports', 'success');
+  } else {
+    const already = state.visitedCountries.some(c => (c.isoShortCode || c.iso) === state.modalSelected.iso);
+    if (already) { showToast('Country already added', 'info'); return; }
+    state.visitedCountries.push({
+      name: state.modalSelected.name,
+      isoShortCode: state.modalSelected.iso,
+      iso: state.modalSelected.iso,
+    });
+    saveLocal();
+    showToast(state.modalSelected.name + ' added to visited countries', 'success');
+  }
+  document.getElementById('addPassportOverlay').classList.add('hidden');
+  renderProfile();
+}
+
+function wireNavLinks() {
+  document.querySelectorAll('[data-view]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.preventDefault();
+      const view = el.dataset.view;
+      if (view === 'profile') {
+        if (!state.user) { showView('auth'); return; }
+        renderProfile();
+        return;
+      }
+      if (view === 'auth' && state.user) return;
+      showView(view);
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  restoreSession();
+  wireNavLinks();
+  loadRankings();
+
+  document.getElementById('heroSearch').addEventListener('input', function() {
+    const val = this.value;
+    document.getElementById('heroSearchClear').classList.toggle('hidden', !val);
+    applyFilter(val);
+  });
+
+  document.getElementById('heroSearchClear').addEventListener('click', () => {
+    document.getElementById('heroSearch').value = '';
+    document.getElementById('heroSearchClear').classList.add('hidden');
+    applyFilter('');
+  });
+
+  document.querySelectorAll('.sort-tab').forEach(tab => {
+    tab.addEventListener('click', () => applySort(tab.dataset.sort));
+  });
+
+  document.getElementById('layoutGrid').addEventListener('click', () => {
+    state.layout = 'grid';
+    document.getElementById('layoutGrid').classList.add('active');
+    document.getElementById('layoutList').classList.remove('active');
     renderGrid();
   });
-});
 
-/* Search */
-searchInput.addEventListener('input', () => {
-  searchClear.classList.toggle('hidden', !searchInput.value);
-  applyFilter();
-});
+  document.getElementById('layoutList').addEventListener('click', () => {
+    state.layout = 'list';
+    document.getElementById('layoutList').classList.add('active');
+    document.getElementById('layoutGrid').classList.remove('active');
+    renderGrid();
+  });
 
-searchClear.addEventListener('click', () => {
-  searchInput.value = '';
-  searchClear.classList.add('hidden');
-  applyFilter();
-  searchInput.focus();
-});
+  document.getElementById('compareBtn').addEventListener('click', doCompare);
 
-/* Passport modal */
-$('passportClose').addEventListener('click', closePassport);
-passportOverlay.addEventListener('click', e => {
-  if (e.target === passportOverlay) closePassport();
-});
+  document.getElementById('tabSignIn').addEventListener('click', () => {
+    state.authMode = 'login';
+    document.getElementById('tabSignIn').classList.add('active');
+    document.getElementById('tabRegister').classList.remove('active');
+    document.getElementById('authSubmit').textContent = 'Sign In';
+    document.getElementById('authSwitchLink').textContent = 'Register';
+    document.querySelector('.auth-switch').innerHTML = 'Don\'t have an account? <a href="#" id="authSwitchLink">Register</a>';
+    document.getElementById('authSwitchLink').addEventListener('click', e => {
+      e.preventDefault();
+      document.getElementById('tabRegister').click();
+    });
+    document.getElementById('authError').classList.add('hidden');
+  });
 
-/* Auth modal */
-authBtn.addEventListener('click', () => {
-  if (state.user) {
-    if (confirm(`Sign out from ${state.user}?`)) doLogout();
-  } else {
-    openAuth();
-  }
-});
+  document.getElementById('tabRegister').addEventListener('click', () => {
+    state.authMode = 'register';
+    document.getElementById('tabRegister').classList.add('active');
+    document.getElementById('tabSignIn').classList.remove('active');
+    document.getElementById('authSubmit').textContent = 'Create Account';
+    document.querySelector('.auth-switch').innerHTML = 'Already have an account? <a href="#" id="authSwitchLink">Sign In</a>';
+    document.getElementById('authSwitchLink').addEventListener('click', e => {
+      e.preventDefault();
+      document.getElementById('tabSignIn').click();
+    });
+    document.getElementById('authError').classList.add('hidden');
+  });
 
-$('authClose').addEventListener('click', closeAuth);
-authOverlay.addEventListener('click', e => {
-  if (e.target === authOverlay) closeAuth();
-});
+  document.getElementById('authSwitchLink').addEventListener('click', e => {
+    e.preventDefault();
+    if (state.authMode === 'login') {
+      document.getElementById('tabRegister').click();
+    } else {
+      document.getElementById('tabSignIn').click();
+    }
+  });
 
-/* Auth tabs */
-document.querySelectorAll('.auth-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-    document.getElementById(`form${tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1)}`).classList.add('active');
+  document.getElementById('authForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const username = document.getElementById('authUsername').value.trim();
+    const password = document.getElementById('authPassword').value;
+    const errEl = document.getElementById('authError');
+    const submitBtn = document.getElementById('authSubmit');
+    errEl.classList.add('hidden');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '…';
+    try {
+      if (state.authMode === 'login') {
+        await doLogin(username, password);
+      } else {
+        await doRegister(username, password);
+      }
+    } catch(err) {
+      errEl.textContent = err.message || 'Authentication failed';
+      errEl.classList.remove('hidden');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = state.authMode === 'login' ? 'Sign In' : 'Create Account';
+    }
+  });
+
+  document.getElementById('navLogoutBtn').addEventListener('click', doLogout);
+
+  document.getElementById('copyLinkBtn').addEventListener('click', () => {
+    const url = document.getElementById('publicLinkUrl').textContent;
+    navigator.clipboard.writeText(url).catch(() => {});
+    showToast('Link copied!', 'success');
+  });
+
+  document.getElementById('makePrivateBtn').addEventListener('click', () => {
+    Object.keys(state.privacy).forEach(k => { state.privacy[k] = false; });
+    saveLocal();
+    renderPrivacySettings();
+    showToast('Profile is now fully private', 'info');
+  });
+
+  document.querySelectorAll('.toggle-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const key = pill.dataset.key;
+      if (!key) return;
+      state.privacy[key] = !state.privacy[key];
+      pill.classList.toggle('on', state.privacy[key]);
+      saveLocal();
+    });
+  });
+
+  document.getElementById('modalTabPassport').addEventListener('click', () => {
+    state.modalMode = 'passport';
+    document.getElementById('modalTabPassport').classList.add('active');
+    document.getElementById('modalTabVisited').classList.remove('active');
+    document.getElementById('modalConfirmBtn').textContent = '＋ Add to my passports';
+    state.modalSelected = null;
+    document.getElementById('modalConfirmBtn').disabled = true;
+    document.getElementById('modalSearch').value = '';
+    renderModalGrid('');
+  });
+
+  document.getElementById('modalTabVisited').addEventListener('click', () => {
+    state.modalMode = 'visited';
+    document.getElementById('modalTabVisited').classList.add('active');
+    document.getElementById('modalTabPassport').classList.remove('active');
+    document.getElementById('modalConfirmBtn').textContent = '＋ Add visited country';
+    state.modalSelected = null;
+    document.getElementById('modalConfirmBtn').disabled = true;
+    document.getElementById('modalSearch').value = '';
+    renderModalGrid('');
+  });
+
+  document.getElementById('modalSearch').addEventListener('input', function() {
+    renderModalGrid(this.value);
+  });
+
+  document.getElementById('modalConfirmBtn').addEventListener('click', addPassportToCollection);
+
+  document.getElementById('closeAddPassport').addEventListener('click', () => {
+    document.getElementById('addPassportOverlay').classList.add('hidden');
+  });
+
+  document.getElementById('addPassportOverlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('addPassportOverlay')) {
+      document.getElementById('addPassportOverlay').classList.add('hidden');
+    }
   });
 });
-
-$('btnLogin').addEventListener('click', doLogin);
-$('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-
-$('btnRegister').addEventListener('click', doRegister);
-$('regPass').addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
-
-/* Compare */
-$('btnCompare').addEventListener('click', doCompare);
-
-/* Keyboard: close modals on Escape */
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    closePassport();
-    closeAuth();
-  }
-});
-
-/* ─── Init ──────────────────────────────────────────────────── */
-updateAuthBtn();
-loadRankings();
