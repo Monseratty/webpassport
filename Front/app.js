@@ -1,5 +1,5 @@
 /* ─── Config ────────────────────────────────────────────────── */
-const API = 'http://localhost:5097';
+const API = 'https://webapppassport.fly.dev';
 
 /* ─── Helpers ───────────────────────────────────────────────── */
 
@@ -11,15 +11,14 @@ function flag(iso) {
 }
 
 function normalize(item) {
-  /* Accept any reasonable shape the backend might return */
   const iso   = (item.iso || item.isoShortCode || item.code || item.country || '').toUpperCase();
   const name  = item.name || item.countryName || item.country || iso;
-  const rank  = item.rank || item.globalRank || 0;
+  const rank  = item.worldRank || item.rank || item.globalRank || 0;
   const vf    = item.visaFree   ?? item.vf   ?? item.visa_free   ?? 0;
   const voa   = item.visaOnArrival ?? item.voa ?? item.visa_on_arrival ?? 0;
   const ev    = item.eVisa      ?? item.ev    ?? item.e_visa      ?? 0;
   const vr    = item.visaRequired ?? item.vr  ?? item.visa_required ?? 0;
-  const total = vf + voa + ev + vr || item.mobility || item.score || item.total || 0;
+  const total = vf + voa + ev + vr || item.mobilityScore || item.mobility || item.score || item.total || 0;
   return { iso, name, rank, vf, voa, ev, vr, total };
 }
 
@@ -182,13 +181,17 @@ async function loadRankings() {
 
   let data = [];
 
-  /* Try endpoints in order of preference */
-  const endpoints = ['/rank', '/stack', '/passport', '/'];
-  for (const ep of endpoints) {
+  try {
+    const res = await apiFetch('/rank');
+    const arr = res.passports || res.countries || (Array.isArray(res) ? res : []);
+    if (arr.length) data = arr;
+  } catch(_) {}
+
+  if (!data.length) {
     try {
-      const res = await apiFetch(ep);
-      const arr = Array.isArray(res) ? res : (res.data || res.passports || res.ranks || []);
-      if (arr.length) { data = arr; break; }
+      const res = await apiFetch('/');
+      const arr = Array.isArray(res) ? res : (res.data || []);
+      if (arr.length) data = arr;
     } catch(_) {}
   }
 
@@ -205,7 +208,7 @@ async function loadRankings() {
     rankingsGrid.innerHTML = `
       <div class="empty-state">
         <span>⚠️</span>
-        <p>Could not load data. Make sure the API is running on <code>${API}</code></p>
+        <p>Could not load data. Please try again later.</p>
       </div>`;
     return;
   }
@@ -234,24 +237,30 @@ async function openPassport(iso) {
   passportOverlay.classList.remove('hidden');
   document.body.style.overflow = 'hidden';
 
-  let detail = null;
+  let countryData = null;
   try {
-    detail = await apiFetch(`/passport/${iso}`);
-  } catch(_) {
-    try { detail = await apiFetch(`/passport?iso=${iso}`); } catch(_) {}
-  }
+    countryData = await apiFetch(`/country/${iso}`);
+  } catch(_) {}
 
-  /* Local fallback from state.raw */
   const local = state.raw.find(p => p.iso === iso) || {};
-  const merged = { ...local, ...(detail ? normalize(detail) : {}) };
 
-  /* Destination list: try to extract from detail response */
-  let destinations = [];
-  if (detail) {
-    destinations = detail.destinations || detail.access || detail.countries || [];
+  let merged = { ...local };
+  if (countryData) {
+    merged.name = countryData.name || merged.name;
   }
 
-  renderPassportDetail(merged, destinations);
+  /* Parse destinations from country endpoint:
+     { "Visa free": [...], "Visa on arrival": [...], "ETA": [...], "Visa required": [...] } */
+  const destGroups = { vf: [], voa: [], ev: [], vr: [] };
+  if (countryData && countryData.destinations && typeof countryData.destinations === 'object') {
+    const raw = countryData.destinations;
+    (raw['Visa free']      || []).forEach(d => destGroups.vf.push(d));
+    (raw['Visa on arrival']|| []).forEach(d => destGroups.voa.push(d));
+    (raw['ETA']            || []).forEach(d => destGroups.ev.push(d));
+    (raw['Visa required']  || []).forEach(d => destGroups.vr.push(d));
+  }
+
+  renderPassportDetail(merged, destGroups);
 }
 
 const ACCESS_LABEL = {
@@ -270,18 +279,12 @@ const ACCESS_CLASS = {
   'no-admission': 'na', 'na': 'na',
 };
 
-function renderPassportDetail(p, destinations) {
+function renderPassportDetail(p, destGroups) {
   const f = flag(p.iso);
 
-  /* Group destinations by access type */
-  const groups = { vf: [], voa: [], ev: [], vr: [], na: [] };
-  destinations.forEach(d => {
-    const type = d.type || d.access || d.accessType || 'na';
-    const cls  = ACCESS_CLASS[type.toLowerCase()] || 'na';
-    groups[cls].push(d);
-  });
+  const groups = destGroups || { vf: [], voa: [], ev: [], vr: [] };
+  const hasDestinations = groups.vf.length + groups.voa.length + groups.ev.length + groups.vr.length > 0;
 
-  /* Use breakdown from local data if no destinations */
   const vfCount  = groups.vf.length  || p.vf  || 0;
   const voaCount = groups.voa.length || p.voa || 0;
   const evCount  = groups.ev.length  || p.ev  || 0;
@@ -318,7 +321,7 @@ function renderPassportDetail(p, destinations) {
       </div>
     </div>
 
-    ${destinations.length ? `
+    ${hasDestinations ? `
     <div class="detail-tabs">
       <button class="detail-tab active" data-tab="vf">Visa Free (${vfCount})</button>
       <button class="detail-tab" data-tab="voa">Visa on Arrival (${voaCount})</button>
@@ -345,7 +348,7 @@ function renderPassportDetail(p, destinations) {
     const items = groups[tab] || [];
     const q = query.toLowerCase();
     const filtered = q
-      ? items.filter(d => (d.name || d.iso || '').toLowerCase().includes(q))
+      ? items.filter(d => (d.name || d.isoShortCode || d.iso || '').toLowerCase().includes(q))
       : items;
 
     if (!filtered.length) {
@@ -353,22 +356,20 @@ function renderPassportDetail(p, destinations) {
       return;
     }
 
+    const tabLabels = { vf: 'Visa Free', voa: 'Visa on Arrival', ev: 'ETA', vr: 'Visa Required' };
     list.innerHTML = filtered.map(d => {
-      const dIso  = (d.iso || d.isoShortCode || d.code || '').toUpperCase();
+      const dIso  = (d.isoShortCode || d.iso || d.code || '').toUpperCase();
       const dName = d.name || d.countryName || dIso;
-      const dType = d.type || d.access || tab;
-      const cls   = ACCESS_CLASS[dType.toLowerCase()] || tab;
-      const label = ACCESS_LABEL[dType.toLowerCase()] || dType;
       return `
         <div class="dest-item">
           <span class="dest-flag">${flag(dIso)}</span>
           <span class="dest-name">${dName}</span>
-          <span class="dest-badge badge-${cls}">${label}</span>
+          <span class="dest-badge badge-${tab}">${tabLabels[tab] || tab}</span>
         </div>`;
     }).join('');
   }
 
-  if (destinations.length) {
+  if (hasDestinations) {
     renderDestList('vf');
 
     passportContent.querySelectorAll('.detail-tab').forEach(btn => {
