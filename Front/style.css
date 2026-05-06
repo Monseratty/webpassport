@@ -432,6 +432,12 @@ input, select {
   gap: 8px;
 }
 
+/* ─── Card entrance animation ──────────────────────────────── */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: none; }
+}
+
 .passport-card {
   background: var(--c-card);
   border: 1px solid var(--c-border);
@@ -440,6 +446,7 @@ input, select {
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
   position: relative;
+  animation: cardIn .45s cubic-bezier(.4,0,.2,1) both;
 }
 
 .passport-card:hover {
@@ -560,6 +567,7 @@ input, select {
   gap: 16px;
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s;
+  animation: cardIn .35s cubic-bezier(.4,0,.2,1) both;
 }
 
 .passport-row:hover {
@@ -2135,3 +2143,22 @@ input, select {
     display: none;
   }
 }
+
+/* ─── Hero Canvas (flight-path overlay) ────────────────────── */
+.hero-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: .7;
+}
+
+/* ─── Hero background slow drift ───────────────────────────── */
+@keyframes heroBgDrift {
+  0%   { transform: scale(1)    translate(0,   0);    }
+  33%  { transform: scale(1.07) translate(-2%, 1.5%); }
+  66%  { transform: scale(1.04) translate(2.5%,-1%);  }
+  100% { transform: scale(1)    translate(0,   0);    }
+}
+
+.hero::before { animation: heroBgDrift 20s ease-in-out infinite; }
