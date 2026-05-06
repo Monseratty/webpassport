@@ -287,8 +287,9 @@ function cardTemplate(p) {
   const pct = Math.round(((p.total || 0) / MAX_SCORE) * 100);
   const rank = p.rank || '—';
   const isTop3 = p.rank && p.rank <= 3;
+  const tierClass = p.rank === 1 ? ' tier-gold' : p.rank === 2 ? ' tier-silver' : p.rank === 3 ? ' tier-bronze' : '';
   return `
-    <div class="passport-card" data-iso="${p.iso}" tabindex="0" role="button" aria-label="${p.name}">
+    <div class="passport-card${tierClass}" data-iso="${p.iso}" tabindex="0" role="button" aria-label="${p.name}">
       <div class="card-rank-badge${isTop3 ? ' top-3' : ''}">#${rank}</div>
       <div class="card-flag">${flag(p.iso)}</div>
       <div class="card-name">${p.name || ''}</div>
@@ -347,6 +348,10 @@ function renderGrid() {
     grid.innerHTML = state.filtered.map(rowTemplate).join('');
   }
 
+  grid.querySelectorAll('.passport-card, .passport-row').forEach((el, i) => {
+    el.style.animationDelay = `${Math.min(i * 0.045, 0.75)}s`;
+  });
+
   grid.querySelectorAll('[data-iso]').forEach(el => {
     el.addEventListener('click', () => openDetail(el.dataset.iso));
     el.addEventListener('keydown', e => { if (e.key === 'Enter') openDetail(el.dataset.iso); });
@@ -383,7 +388,7 @@ function renderDetailContent(data) {
   const isLoggedIn = !!state.user;
   const alreadyAdded = state.myPassports.some(p => p.iso === data.isoShortCode);
 
-  const addBtn = isLoggedIn
+  const addBtnHtml = isLoggedIn
     ? `<button class="btn-add-passport" id="detailAddBtn">${alreadyAdded ? '✓ Added' : '＋ Add to my passports'}</button>`
     : '';
 
@@ -397,7 +402,7 @@ function renderDetailContent(data) {
           <div class="detail-iso">${data.isoShortCode || ''}</div>
           <div class="detail-rank-badge">🏆 Rank #${rankNum}</div>
         </div>
-        <div class="detail-actions">${addBtn}</div>
+        <div class="detail-actions">${addBtnHtml}</div>
       </div>
 
       <div class="detail-stat-row">
@@ -1052,7 +1057,138 @@ function wireNavLinks() {
   });
 }
 
+/* ─── Hero Canvas — animated flight paths ────────────────────── */
+function initHeroCanvas() {
+  const hero = document.querySelector('.hero');
+  if (!hero) return;
+
+  const canvas = document.createElement('canvas');
+  canvas.className = 'hero-canvas';
+  hero.insertBefore(canvas, hero.firstChild);
+
+  const ctx = canvas.getContext('2d');
+
+  function resize() {
+    const r = hero.getBoundingClientRect();
+    canvas.width  = r.width;
+    canvas.height = r.height;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const nodes = Array.from({ length: 55 }, () => ({
+    x: Math.random(),
+    y: Math.random(),
+    r: Math.random() * 1.4 + 0.6,
+    phase:      Math.random() * Math.PI * 2,
+    phaseSpeed: 0.012 + Math.random() * 0.018,
+  }));
+
+  const connections = [];
+  nodes.forEach((a, i) => {
+    nodes
+      .map((b, j) => ({ j, d: Math.hypot(b.x - a.x, b.y - a.y) }))
+      .filter(e => e.j !== i)
+      .sort((a, b) => a.d - b.d)
+      .slice(0, 2)
+      .forEach(({ j }) => { if (i < j) connections.push([i, j]); });
+  });
+
+  function arcCtrl(a, b) {
+    return {
+      cx: (a.x + b.x) / 2,
+      cy: (a.y + b.y) / 2 - Math.hypot(b.x - a.x, b.y - a.y) * 0.38,
+    };
+  }
+  function bezier(x1, y1, cx, cy, x2, y2, t) {
+    const u = 1 - t;
+    return { x: u*u*x1 + 2*u*t*cx + t*t*x2, y: u*u*y1 + 2*u*t*cy + t*t*y2 };
+  }
+
+  function spawnPlane(t) {
+    let from = (Math.random() * nodes.length) | 0;
+    let to   = (Math.random() * nodes.length) | 0;
+    while (to === from) to = (Math.random() * nodes.length) | 0;
+    return { from, to, t: t || 0, speed: 0.0007 + Math.random() * 0.0009 };
+  }
+  const planes = Array.from({ length: 8 }, (_, k) => spawnPlane(k / 8));
+
+  function draw() {
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    connections.forEach(([i, j]) => {
+      const a = nodes[i], b = nodes[j];
+      const { cx, cy } = arcCtrl(a, b);
+      ctx.beginPath();
+      ctx.moveTo(a.x * w, a.y * h);
+      ctx.quadraticCurveTo(cx * w, cy * h, b.x * w, b.y * h);
+      ctx.strokeStyle = 'rgba(96,165,250,0.07)';
+      ctx.lineWidth   = 0.8;
+      ctx.stroke();
+    });
+
+    nodes.forEach(n => {
+      n.phase += n.phaseSpeed;
+      const pulse = Math.sin(n.phase);
+      const r     = n.r + pulse * 0.7;
+      const alpha = 0.22 + pulse * 0.12;
+      const nx = n.x * w, ny = n.y * h;
+
+      const grd = ctx.createRadialGradient(nx, ny, 0, nx, ny, r * 5);
+      grd.addColorStop(0, `rgba(148,197,253,${alpha * 0.7})`);
+      grd.addColorStop(1,  'rgba(148,197,253,0)');
+      ctx.beginPath();
+      ctx.arc(nx, ny, r * 5, 0, Math.PI * 2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(nx, ny, r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(148,197,253,${alpha + 0.28})`;
+      ctx.fill();
+    });
+
+    planes.forEach(plane => {
+      plane.t += plane.speed;
+      if (plane.t >= 1) Object.assign(plane, spawnPlane(0));
+
+      const a = nodes[plane.from], b = nodes[plane.to];
+      const { cx, cy } = arcCtrl(a, b);
+      const TRAIL = 14;
+
+      for (let i = TRAIL; i >= 0; i--) {
+        const tt  = Math.max(0, plane.t - i * 0.016);
+        const pos = bezier(a.x*w, a.y*h, cx*w, cy*h, b.x*w, b.y*h, tt);
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, (1 - i/TRAIL) * 2.4, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(96,165,250,${(1 - i/TRAIL) * 0.65})`;
+        ctx.fill();
+      }
+
+      const pos = bezier(a.x*w, a.y*h, cx*w, cy*h, b.x*w, b.y*h, plane.t);
+      const grd = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, 7);
+      grd.addColorStop(0,   'rgba(255,255,255,0.95)');
+      grd.addColorStop(0.4, 'rgba(147,197,253,0.75)');
+      grd.addColorStop(1,   'rgba(96,165,250,0)');
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, 7, 0, Math.PI * 2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, 2, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,1)';
+      ctx.fill();
+    });
+
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  initHeroCanvas();
   restoreSession();
   wireNavLinks();
   loadRankings();
