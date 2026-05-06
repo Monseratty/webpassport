@@ -2501,6 +2501,56 @@ input, select {
 .row-iso   { color: rgba(255,255,255,0.32); font-size: 11px; letter-spacing: 1px; }
 .row-score { color: #60a5fa; font-size: 18px; font-weight: 800; }
 
+/* ── Auth page animations ─────────────────────────────────── */
+
+@keyframes authSlideLeft {
+  from { opacity: 0; transform: translateX(-52px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes authSlideRight {
+  from { opacity: 0; transform: translateX(52px); }
+  to   { opacity: 1; transform: none; }
+}
+
+#view-auth.active .auth-left {
+  animation: authSlideLeft 0.55s cubic-bezier(.4,0,.2,1) both;
+}
+
+#view-auth.active .auth-right {
+  animation: authSlideRight 0.55s cubic-bezier(.4,0,.2,1) 0.08s both;
+}
+
+.auth-flags-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.auth-left-inner {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes flagFloat {
+  0%   { transform: translateY(0) rotate(-6deg); opacity: 0; }
+  8%   { opacity: 0.75; }
+  90%  { opacity: 0.4; }
+  100% { transform: translateY(-108vh) rotate(8deg); opacity: 0; }
+}
+
+.auth-flag-particle {
+  position: absolute;
+  bottom: -44px;
+  line-height: 1;
+  animation: flagFloat linear forwards;
+  will-change: transform, opacity;
+  user-select: none;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+}
+
 /* ── Performance fix: replace background-position with transform ── */
 /* background-position не composited → жрёт main thread → убивает rAF canvas */
 

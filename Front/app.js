@@ -208,6 +208,52 @@ function showView(name) {
   if (el) el.classList.add('active');
   setActiveNavLink(name);
   window.scrollTo(0, 0);
+  if (name === 'auth') animateAuthStats();
+}
+
+function animateAuthStats() {
+  const targets = [201, 40, 195];
+  const suffixes = ['', 'K+', ''];
+  document.querySelectorAll('.auth-stat-n').forEach((el, i) => {
+    if (targets[i] == null) return;
+    const target = targets[i];
+    const suffix = suffixes[i];
+    const duration = 1100;
+    const start = performance.now();
+    function tick(now) {
+      const p = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 4);
+      el.textContent = Math.round(eased * target) + suffix;
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  });
+}
+
+function initAuthFlags() {
+  const panel = document.querySelector('.auth-left');
+  if (!panel) return;
+  const container = document.createElement('div');
+  container.className = 'auth-flags-bg';
+  panel.insertBefore(container, panel.firstChild);
+
+  const flags = ['🇸🇬','🇩🇪','🇯🇵','🇬🇧','🇫🇷','🇮🇹','🇪🇸','🇺🇸','🇨🇦','🇦🇺',
+                 '🇨🇭','🇸🇪','🇰🇷','🇧🇷','🇳🇱','🇵🇹','🇦🇹','🇩🇰','🇳🇴','🇦🇪',
+                 '🇳🇿','🇫🇮','🇨🇿','🇲🇽','🇿🇦'];
+
+  function spawnFlag() {
+    const el = document.createElement('span');
+    el.className = 'auth-flag-particle';
+    el.textContent = flags[Math.floor(Math.random() * flags.length)];
+    const size = 14 + Math.random() * 20;
+    const dur  = 7 + Math.random() * 9;
+    const delay = Math.random() * 1.5;
+    el.style.cssText = `left:${5 + Math.random() * 88}%;font-size:${size}px;animation-duration:${dur}s;animation-delay:${delay}s;`;
+    container.appendChild(el);
+    el.addEventListener('animationend', () => { el.remove(); spawnFlag(); });
+  }
+
+  for (let i = 0; i < 10; i++) setTimeout(spawnFlag, i * 500);
 }
 
 function updateAuthState() {
@@ -1190,6 +1236,7 @@ function initHeroCanvas() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initHeroCanvas();
+  initAuthFlags();
   restoreSession();
   wireNavLinks();
   loadRankings();
