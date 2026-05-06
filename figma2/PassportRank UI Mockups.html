@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PassportRank — UI Mockups (ЛР3)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/screens.css">
+  <style>
+    body { margin: 0; font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="src/world-map.jsx"></script>
+<script type="text/babel" src="src/atoms.jsx"></script>
+<script type="text/babel" src="src/screens-1.jsx"></script>
+<script type="text/babel" src="src/screens-2.jsx"></script>
+<script type="text/babel" src="src/screens-3.jsx"></script>
+<script type="text/babel" src="src/screens-4.jsx"></script>
+<script type="text/babel" src="src/screens-mobile.jsx"></script>
+
+<div id="root"></div>
+
+<script type="text/babel">
+const App = () => (
+  <DesignCanvas>
+
+    <DCSection id="desktop" title="Desktop screens (8)">
+      <DCArtboard id="home"     label="01 · Home / Rankings"        width={1440} height={1400}>
+        <ScreenHome />
+      </DCArtboard>
+      <DCArtboard id="passport" label="02 · Passport detail + map"   width={1440} height={1400}>
+        <ScreenPassportDetail />
+      </DCArtboard>
+      <DCArtboard id="compare"  label="03 · Compare passports"       width={1440} height={1500}>
+        <ScreenCompare />
+      </DCArtboard>
+      <DCArtboard id="auth"     label="04 · Sign in / Register"      width={1440} height={900}>
+        <ScreenAuth />
+      </DCArtboard>
+      <DCArtboard id="profile"  label="05 · My Profile (private)"    width={1440} height={1500}>
+        <ScreenProfile />
+      </DCArtboard>
+      <DCArtboard id="public"   label="06 · Public profile"          width={1440} height={1300}>
+        <ScreenPublicProfile />
+      </DCArtboard>
+      <DCArtboard id="privacy"  label="07 · Privacy settings"        width={1440} height={1300}>
+        <ScreenPrivacy />
+      </DCArtboard>
+      <DCArtboard id="addpass"  label="08 · Add passport modal"      width={1440} height={900}>
+        <ScreenAddPassport />
+      </DCArtboard>
+    </DCSection>
+
+    <DCSection id="mobile" title="Mobile adaptive (4 / 8 ≥ 50%)">
+      <DCArtboard id="m-home"    label="01-M · Home"            width={420} height={900}>
+        <MobileHome />
+      </DCArtboard>
+      <DCArtboard id="m-passport" label="02-M · Passport detail" width={420} height={900}>
+        <MobilePassport />
+      </DCArtboard>
+      <DCArtboard id="m-profile" label="05-M · My Profile"      width={420} height={900}>
+        <MobileProfile />
+      </DCArtboard>
+      <DCArtboard id="m-auth"    label="04-M · Sign In"         width={420} height={900}>
+        <MobileAuth />
+      </DCArtboard>
+    </DCSection>
+
+  </DesignCanvas>
+);
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+
+</body>
+</html>
