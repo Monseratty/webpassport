@@ -287,8 +287,9 @@ function cardTemplate(p) {
   const pct = Math.round(((p.total || 0) / MAX_SCORE) * 100);
   const rank = p.rank || '—';
   const isTop3 = p.rank && p.rank <= 3;
+  const tierClass = p.rank === 1 ? ' tier-gold' : p.rank === 2 ? ' tier-silver' : p.rank === 3 ? ' tier-bronze' : '';
   return `
-    <div class="passport-card" data-iso="${p.iso}" tabindex="0" role="button" aria-label="${p.name}">
+    <div class="passport-card${tierClass}" data-iso="${p.iso}" tabindex="0" role="button" aria-label="${p.name}">
       <div class="card-rank-badge${isTop3 ? ' top-3' : ''}">#${rank}</div>
       <div class="card-flag">${flag(p.iso)}</div>
       <div class="card-name">${p.name || ''}</div>
