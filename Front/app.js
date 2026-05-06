@@ -383,7 +383,7 @@ function renderDetailContent(data) {
   const isLoggedIn = !!state.user;
   const alreadyAdded = state.myPassports.some(p => p.iso === data.isoShortCode);
 
-  const addBtn = isLoggedIn
+  const addBtnHtml = isLoggedIn
     ? `<button class="btn-add-passport" id="detailAddBtn">${alreadyAdded ? '✓ Added' : '＋ Add to my passports'}</button>`
     : '';
 
@@ -397,7 +397,7 @@ function renderDetailContent(data) {
           <div class="detail-iso">${data.isoShortCode || ''}</div>
           <div class="detail-rank-badge">🏆 Rank #${rankNum}</div>
         </div>
-        <div class="detail-actions">${addBtn}</div>
+        <div class="detail-actions">${addBtnHtml}</div>
       </div>
 
       <div class="detail-stat-row">
