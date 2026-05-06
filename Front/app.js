@@ -1114,7 +1114,9 @@ function initHeroCanvas() {
   const planes = Array.from({ length: 8 }, (_, k) => spawnPlane(k / 8));
 
   function draw() {
+    requestAnimationFrame(draw);
     const w = canvas.width, h = canvas.height;
+    if (!w || !h) return;
     ctx.clearRect(0, 0, w, h);
 
     connections.forEach(([i, j]) => {
@@ -1131,7 +1133,7 @@ function initHeroCanvas() {
     nodes.forEach(n => {
       n.phase += n.phaseSpeed;
       const pulse = Math.sin(n.phase);
-      const r     = n.r + pulse * 0.7;
+      const r     = Math.max(0.2, n.r + pulse * 0.7);
       const alpha = 0.22 + pulse * 0.12;
       const nx = n.x * w, ny = n.y * h;
 
@@ -1181,7 +1183,6 @@ function initHeroCanvas() {
       ctx.fill();
     });
 
-    requestAnimationFrame(draw);
   }
 
   draw();
