@@ -631,11 +631,17 @@ function populateCompareSelects() {
           if (val) {
             flagEl.textContent = flag(val);
             flagEl.style.fontSize = '32px';
+            flagEl.style.lineHeight = '1';
           } else {
-            flagEl.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+            flagEl.textContent = '+';
+            flagEl.style.fontSize = '';
+            flagEl.style.lineHeight = '';
           }
         }
-        if (wrap) wrap.classList.toggle('active', !!val);
+        if (wrap) {
+          wrap.classList.toggle('active', !!val);
+          wrap.classList.toggle('empty', !val);
+        }
       },
     };
   }
