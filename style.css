@@ -3002,3 +3002,271 @@ input, select {
   animation: goldHighlight 3s ease-in-out infinite;
   will-change: opacity;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ANIMATION SYSTEM
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Easing tokens ──────────────────────────────────────────── */
+:root {
+  --ease-out-expo:  cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* ── View fade-in ───────────────────────────────────────────── */
+@keyframes viewFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.view.active {
+  animation: viewFadeIn 0.22s ease both;
+}
+
+/* ── Universal element entrance ─────────────────────────────── */
+@keyframes elemIn {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Rankings hero stagger ──────────────────────────────────── */
+#view-rankings.active .hero-badge       { animation: elemIn 0.55s var(--ease-out-expo) 0.05s  both; }
+#view-rankings.active .hero-title       { animation: elemIn 0.6s  var(--ease-out-expo) 0.12s  both; }
+#view-rankings.active .hero-subtitle    { animation: elemIn 0.6s  var(--ease-out-expo) 0.2s   both; }
+#view-rankings.active .hero-search-wrap { animation: elemIn 0.55s var(--ease-out-expo) 0.28s  both; }
+#view-rankings.active .hero-stats       { animation: elemIn 0.5s  var(--ease-out-expo) 0.36s  both; }
+#view-rankings.active .rankings-toolbar { animation: elemIn 0.45s var(--ease-out-expo) 0.14s  both; }
+
+/* ── Compare hero stagger ───────────────────────────────────── */
+#view-compare.active .compare-hero-badge  { animation: elemIn 0.55s var(--ease-out-expo) 0.05s both; }
+#view-compare.active .compare-hero-title  { animation: elemIn 0.6s  var(--ease-out-expo) 0.12s both; }
+#view-compare.active .compare-hero-sub    { animation: elemIn 0.55s var(--ease-out-expo) 0.2s  both; }
+#view-compare.active .compare-picker-card { animation: elemIn 0.55s var(--ease-out-expo) 0.28s both; }
+#view-compare.active .compare-popular     { animation: elemIn 0.5s  var(--ease-out-expo) 0.38s both; }
+
+/* ── Dropdown slide open ────────────────────────────────────── */
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+.cp-drop:not([hidden]) {
+  animation: dropIn 0.2s var(--ease-out-quart) both;
+}
+
+/* ── Button press micro-interactions ────────────────────────── */
+.btn-primary:active  { transform: scale(0.96); transition: transform 0.07s; }
+.btn-signin:active   { transform: scale(0.96); transition: transform 0.07s; }
+.btn-outline:active  { transform: scale(0.97); transition: transform 0.07s; }
+.btn-danger:active   { transform: scale(0.97); transition: transform 0.07s; }
+.popular-chip:active { transform: scale(0.93) translateY(1px); }
+
+/* ── Sort tab + layout btn: smoother active ─────────────────── */
+.sort-tab   { transition: all 0.18s var(--ease-out-quart); }
+.layout-btn { transition: all 0.18s var(--ease-out-quart); }
+
+/* ── Modal entrance ─────────────────────────────────────────── */
+@keyframes backdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes modalUp {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+.modal-overlay:not(.hidden) {
+  animation: backdropIn 0.22s ease both;
+}
+.modal-overlay:not(.hidden) .modal-card {
+  animation: modalUp 0.34s var(--ease-out-expo) 0.04s both;
+}
+
+/* ── Compare result reveal ──────────────────────────────────── */
+@keyframes resultReveal {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes winnerShine {
+  0%, 100% { box-shadow: none; }
+  50%       { box-shadow: 0 0 60px rgba(37,99,235,0.2); }
+}
+
+.winner-banner {
+  animation: resultReveal 0.5s var(--ease-out-expo) both,
+             winnerShine 4.5s ease-in-out 0.8s infinite;
+}
+.compare-table { animation: resultReveal 0.5s var(--ease-out-expo) 0.1s  both; }
+.compare-maps  { animation: resultReveal 0.45s var(--ease-out-expo) 0.18s both; }
+
+/* ── VS ring pulse ──────────────────────────────────────────── */
+@keyframes vsPulse {
+  0%, 100% { border-color: rgba(255,255,255,0.13); box-shadow: none; }
+  50%       { border-color: rgba(96,165,250,0.4);  box-shadow: 0 0 18px rgba(37,99,235,0.2); }
+}
+.compare-vs-ring {
+  animation: vsPulse 4s ease-in-out infinite;
+  transition: border-color 0.3s;
+}
+
+/* ── Detail page entrance ───────────────────────────────────── */
+.detail-wrap {
+  animation: resultReveal 0.45s var(--ease-out-expo) both;
+}
+
+@keyframes breadIn {
+  from { opacity: 0; transform: translateX(-14px); }
+  to   { opacity: 1; transform: none; }
+}
+.detail-breadcrumb {
+  animation: breadIn 0.3s var(--ease-out-quart) both;
+}
+
+.detail-stat-cell                   { animation: resultReveal 0.4s var(--ease-out-expo) both; }
+.detail-stat-cell:nth-child(1)      { animation-delay: 0.08s; }
+.detail-stat-cell:nth-child(2)      { animation-delay: 0.14s; }
+.detail-stat-cell:nth-child(3)      { animation-delay: 0.20s; }
+.detail-stat-cell:nth-child(4)      { animation-delay: 0.26s; }
+.detail-stat-cell { transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s; }
+.detail-stat-cell:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+/* ── Profile + privacy entrance ─────────────────────────────── */
+.profile-content {
+  animation: resultReveal 0.45s var(--ease-out-expo) both;
+}
+#view-privacy.active .privacy-wrap {
+  animation: resultReveal 0.45s var(--ease-out-expo) 0.06s both;
+}
+
+/* ── Auth stat pop ──────────────────────────────────────────── */
+@keyframes statPop {
+  0%   { opacity: 0; transform: scale(0.82); }
+  65%  { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+#view-auth.active .auth-stat:nth-child(1) .auth-stat-n { animation: statPop 0.45s var(--ease-out-expo) 0.40s both; }
+#view-auth.active .auth-stat:nth-child(2) .auth-stat-n { animation: statPop 0.45s var(--ease-out-expo) 0.52s both; }
+#view-auth.active .auth-stat:nth-child(3) .auth-stat-n { animation: statPop 0.45s var(--ease-out-expo) 0.64s both; }
+
+/* ── Form focus rings ───────────────────────────────────────── */
+.form-input {
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.form-input:focus {
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+}
+.modal-search {
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.modal-search:focus {
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+}
+.dest-search {
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.dest-search:focus {
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+}
+
+/* ── Nav logo hover ─────────────────────────────────────────── */
+.nav-logo {
+  transition: opacity 0.2s, transform 0.2s;
+}
+.nav-logo:hover {
+  transform: scale(1.03);
+}
+
+/* ── Nav link: slide-in underline indicator ─────────────────── */
+.nav-link {
+  position: relative;
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  background: #60a5fa;
+  border-radius: 1px;
+  transform: scaleX(0);
+  transition: transform 0.2s var(--ease-out-quart);
+}
+.nav-link.active::after {
+  transform: scaleX(1);
+}
+
+/* ── Hero search glow on focus ──────────────────────────────── */
+.hero-search {
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+.hero-search:focus {
+  border-color: rgba(96,165,250,0.6);
+  background: rgba(255,255,255,0.14);
+  box-shadow: 0 0 0 3px rgba(96,165,250,0.12);
+}
+
+/* ── Progress bar: enter from 0 ─────────────────────────────── */
+.progress-fill {
+  transition: width 0.65s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* ── Passport card: sharper hover lift ──────────────────────── */
+.passport-card {
+  transition: transform 0.25s var(--ease-out-expo),
+              box-shadow 0.25s ease,
+              border-color 0.25s ease;
+}
+
+/* ── Passport row hover ─────────────────────────────────────── */
+.passport-row {
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s var(--ease-out-quart);
+}
+.passport-row:hover {
+  transform: translateX(3px);
+}
+
+/* ── Toast exit ─────────────────────────────────────────────── */
+.toast {
+  transition: opacity 0.3s ease, transform 0.3s var(--ease-out-quart);
+}
+.toast.leaving {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+/* ── Toggle pill: snappy knob ───────────────────────────────── */
+.toggle-knob {
+  transition: transform 0.22s var(--ease-out-expo);
+}
+.toggle-pill {
+  transition: background 0.22s ease;
+}
+
+/* ── Compare go button: pulse on hover ──────────────────────── */
+@keyframes btnReady {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); }
+  50%       { box-shadow: 0 0 0 6px rgba(37,99,235,0.18); }
+}
+.compare-go-btn:not(:disabled):hover {
+  animation: btnReady 1.6s ease-in-out infinite;
+}
+
+/* ── Visited chip entrance ──────────────────────────────────── */
+@keyframes chipIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.visited-chip {
+  animation: chipIn 0.3s var(--ease-out-expo) both;
+}
+
+/* ── prefers-reduced-motion ─────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

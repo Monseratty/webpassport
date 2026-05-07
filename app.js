@@ -180,9 +180,8 @@ function showToast(msg, type) {
   t.textContent = msg;
   wrap.appendChild(t);
   setTimeout(() => {
-    t.style.opacity = '0';
-    t.style.transition = 'opacity 0.3s';
-    setTimeout(() => t.remove(), 350);
+    t.classList.add('leaving');
+    setTimeout(() => t.remove(), 320);
   }, 3500);
 }
 
@@ -333,7 +332,7 @@ function cardTemplate(p) {
       <div class="card-iso">${p.iso || ''}</div>
       <div class="card-score">${p.total || 0}</div>
       <div class="card-score-label">visa-free score</div>
-      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:0" data-pct="${pct}"></div></div>
       <div class="card-chips">
         <span class="chip chip-vf">VF ${p.vf || p.total || 0}</span>
         <span class="chip chip-voa">VoA ${p.voa || 0}</span>
@@ -354,7 +353,7 @@ function rowTemplate(p) {
         <div class="row-iso">${p.iso || ''}</div>
       </div>
       <div class="row-bar-wrap">
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:0" data-pct="${pct}"></div></div>
       </div>
       <div class="row-score">${p.total || 0}</div>
       <div class="row-chips">
@@ -387,6 +386,12 @@ function renderGrid() {
 
   grid.querySelectorAll('.passport-card, .passport-row').forEach((el, i) => {
     el.style.animationDelay = `${Math.min(i * 0.045, 0.75)}s`;
+  });
+
+  requestAnimationFrame(() => {
+    grid.querySelectorAll('.progress-fill[data-pct]').forEach(el => {
+      el.style.width = el.dataset.pct + '%';
+    });
   });
 
   grid.querySelectorAll('[data-iso]').forEach(el => {
@@ -491,6 +496,20 @@ function renderDetailContent(data) {
     </div>`;
 
   renderDestList(destinations, state.activeDestFilter, '');
+
+  content.querySelectorAll('.detail-stat-number').forEach((el, i) => {
+    const target = parseInt(el.textContent) || 0;
+    el.textContent = '0';
+    setTimeout(() => {
+      const dur = 750;
+      const start = performance.now();
+      (function tick(now) {
+        const p = Math.min((now - start) / dur, 1);
+        el.textContent = Math.round((1 - Math.pow(1 - p, 3)) * target);
+        if (p < 1) requestAnimationFrame(tick);
+      })(performance.now());
+    }, i * 80);
+  });
 
   const fillMap = buildFillMap(destinations, data.isoShortCode);
 
