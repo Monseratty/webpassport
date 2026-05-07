@@ -199,7 +199,6 @@ function showView(name) {
   setActiveNavLink(name);
   window.scrollTo(0, 0);
   if (name === 'auth') animateAuthStats();
-  if (name === 'compare') ensurePassports().catch(() => {});
 }
 
 function animateAuthStats() {
@@ -285,7 +284,6 @@ async function loadRankings() {
     applySort(state.sort, false);
     loader.style.display = 'none';
     renderGrid();
-    populateCompareSelects();
   } catch(e) {
     loader.style.display = 'none';
     showToast('Failed to load rankings: ' + e.message, 'error');
@@ -601,128 +599,67 @@ function renderDestList(destinations, filterType, query) {
     </div>`).join('');
 }
 
-const cpHandlers = {};
-let cpInited = false;
-let _passportsPromise = null;
+function setupCompare() {
+  const sides = [
+    { input: 'cpInputA', list: 'cpListA', hidden: 'compareA', flagEl: 'cpFlagA' },
+    { input: 'cpInputB', list: 'cpListB', hidden: 'compareB', flagEl: 'cpFlagB' },
+  ];
 
-function ensurePassports() {
-  if (state.passports.length) return Promise.resolve();
-  if (!_passportsPromise) {
-    _passportsPromise = apiFetch('/rank').then(data => {
-      state.passports = (data.passports || []).map(p => ({
-        name: p.name,
-        iso: p.isoShortCode,
-        rank: p.worldRank,
-        total: p.mobilityScore,
-        vf: 0, voa: 0, ev: 0, vr: 0,
-      }));
-      _passportsPromise = null;
-    }).catch(e => {
-      _passportsPromise = null;
-      throw e;
-    });
-  }
-  return _passportsPromise;
-}
+  window._cpSelectors = sides.map(({ input, list, hidden, flagEl }) => {
+    const inputEl  = document.getElementById(input);
+    const listEl   = document.getElementById(list);
+    const hiddenEl = document.getElementById(hidden);
+    const flagDisplay = document.getElementById(flagEl);
 
-function populateCompareSelects() {
-  initCustomSelects();
-}
-
-function initCustomSelects() {
-  if (cpInited) return;
-  cpInited = true;
-  ['A', 'B'].forEach(side => {
-    const wrap    = document.getElementById('cpWrap' + side);
-    const trig    = document.getElementById('cpTrig' + side);
-    const content = document.getElementById('cpContent' + side);
-    const drop    = document.getElementById('cpDrop' + side);
-    const search  = document.getElementById('cpSearch' + side);
-    const list    = document.getElementById('cpList' + side);
-    const hidden  = document.getElementById('compare' + side);
-    const flagEl  = document.getElementById('pickerFlag' + side);
-    const flagWrap = document.getElementById('flagWrap' + side);
-    if (!wrap || !trig) return;
-
-    let currentVal = '';
-
-    function renderList(q) {
-      const query = norm(q);
-      const items = query
-        ? state.passports.filter(p => norm(p.name).includes(query) || norm(p.iso).includes(query))
-        : state.passports;
-      if (!items.length) {
-        list.innerHTML = '<div class="cp-no-results">No results found</div>';
-        return;
-      }
-      list.innerHTML = items.map(p =>
-        `<div class="cp-item${p.iso === currentVal ? ' selected' : ''}" data-iso="${p.iso}">` +
-        `<span class="cp-item-flag">${flag(p.iso)}</span>` +
-        `<span class="cp-item-name">${p.name}</span>` +
-        (p.rank ? `<span class="cp-item-rank">#${p.rank}</span>` : '') +
-        `</div>`
-      ).join('');
-      list.querySelectorAll('.cp-item').forEach(el =>
-        el.addEventListener('click', () => selectVal(el.dataset.iso))
-      );
-    }
-
-    async function openDrop() {
-      drop.removeAttribute('hidden');
-      wrap.classList.add('open');
-      search.value = '';
-      search.focus();
-      if (!state.passports.length) {
-        list.innerHTML = '<div class="cp-no-results">Loading countries…</div>';
-        try { await ensurePassports(); } catch(e) {
-          list.innerHTML = '<div class="cp-no-results">Failed to load. Try again.</div>';
-          return;
-        }
-      }
-      renderList('');
-      const sel = list.querySelector('.selected');
-      if (sel) sel.scrollIntoView({ block: 'nearest' });
-    }
-
-    function closeDrop() {
-      drop.setAttribute('hidden', '');
-      wrap.classList.remove('open');
+    function renderList(filter) {
+      const q = (filter || '').toLowerCase().trim();
+      const items = state.passports
+        .filter(p => !q || p.name.toLowerCase().includes(q) || p.iso.toLowerCase().includes(q))
+        .slice(0, 80);
+      listEl.innerHTML = items.length
+        ? items.map(p =>
+            `<div class="cp-item" data-iso="${p.iso}">` +
+            `<span class="cp-item-flag">${flag(p.iso)}</span>` +
+            `<span class="cp-item-name">${p.name}</span>` +
+            (p.rank ? `<span class="cp-item-rank">#${p.rank}</span>` : '') +
+            `</div>`
+          ).join('')
+        : '<div class="cp-no-results">No results</div>';
     }
 
     function selectVal(iso) {
-      currentVal = iso;
-      if (hidden) hidden.value = iso;
-      const p = state.passports.find(pp => pp.iso === iso);
-      content.innerHTML =
-        `<span class="cp-sel-flag">${flag(iso)}</span>` +
-        `<span class="cp-sel-name">${p ? p.name : iso}</span>`;
-      if (flagEl) {
-        flagEl.textContent = flag(iso);
-        flagEl.style.fontSize = '32px';
-        flagEl.style.lineHeight = '1';
-      }
-      if (flagWrap) {
-        flagWrap.classList.remove('empty');
-        flagWrap.classList.add('active');
-      }
-      closeDrop();
+      const p = state.passports.find(x => x.iso === iso);
+      if (!p) return;
+      hiddenEl.value = p.iso;
+      inputEl.value  = p.name;
+      flagDisplay.textContent = flag(p.iso);
+      flagDisplay.classList.add('has-flag');
+      listEl.classList.add('hidden');
     }
 
-    trig.addEventListener('click', e => {
-      if (wrap.classList.contains('open')) { closeDrop(); return; }
-      document.querySelectorAll('.cp-wrap.open').forEach(el => {
-        if (el !== wrap) { el.querySelector('.cp-drop').setAttribute('hidden', ''); el.classList.remove('open'); }
-      });
-      openDrop();
+    inputEl.addEventListener('focus', () => {
+      renderList(inputEl.value);
+      listEl.classList.remove('hidden');
     });
 
-    search.addEventListener('input', () => renderList(search.value));
+    inputEl.addEventListener('input', () => {
+      hiddenEl.value = '';
+      renderList(inputEl.value);
+      listEl.classList.remove('hidden');
+    });
 
-    document.addEventListener('click', e => {
-      if (!wrap.contains(e.target)) closeDrop();
-    }, true);
+    listEl.addEventListener('mousedown', e => {
+      const item = e.target.closest('.cp-item');
+      if (!item) return;
+      e.preventDefault();
+      selectVal(item.dataset.iso);
+    });
 
-    cpHandlers[side] = { selectVal };
+    inputEl.addEventListener('blur', () => {
+      setTimeout(() => listEl.classList.add('hidden'), 150);
+    });
+
+    return { selectVal };
   });
 }
 
@@ -1226,7 +1163,6 @@ function wireNavLinks() {
       }
       if (view === 'auth' && state.user) return;
       showView(view);
-      if (view === 'compare') populateCompareSelects();
     });
   });
 }
@@ -1365,7 +1301,7 @@ function initHeroCanvas() {
 document.addEventListener('DOMContentLoaded', () => {
   initHeroCanvas();
   initAuthFlags();
-  initCustomSelects();
+  setupCompare();
   restoreSession();
   wireNavLinks();
   loadRankings();
@@ -1405,8 +1341,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('popularChips').addEventListener('click', e => {
     const chip = e.target.closest('.popular-chip');
     if (!chip) return;
-    if (cpHandlers.A) cpHandlers.A.selectVal(chip.dataset.a);
-    if (cpHandlers.B) cpHandlers.B.selectVal(chip.dataset.b);
+    if (window._cpSelectors) window._cpSelectors[0].selectVal(chip.dataset.a);
+    if (window._cpSelectors) window._cpSelectors[1].selectVal(chip.dataset.b);
     doCompare();
   });
 
