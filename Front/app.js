@@ -14,7 +14,7 @@ const JVM_COLORS = {
 
 function flag(iso) {
   if (!iso || iso.length !== 2) return '<span class="flag-unknown">🏳</span>';
-  return `<img class="flag-img" src="https://flagcdn.com/${iso.toLowerCase()}.svg" alt="${iso}" loading="lazy">`;
+  return `<img class="flag-img" src="https://flagcdn.com/w40/${iso.toLowerCase()}.png" alt="${iso}" loading="lazy">`;
 }
 
 function norm(s) {
