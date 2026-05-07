@@ -20,17 +20,18 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-          git fetch origin gh-pages || true
+          git worktree remove /tmp/gh-pages-deploy --force 2>/dev/null || true
+          rm -rf /tmp/gh-pages-deploy
 
-          git worktree add /tmp/gh-pages-deploy gh-pages 2>/dev/null || \
-            git worktree add /tmp/gh-pages-deploy --orphan gh-pages
+          git fetch origin gh-pages
+          git worktree add /tmp/gh-pages-deploy origin/gh-pages
 
           cp -r Front/. /tmp/gh-pages-deploy/
 
           cd /tmp/gh-pages-deploy
           git add -A
           git diff --cached --quiet || git commit -m "Deploy from ${{ github.ref_name }} @ ${{ github.sha }}"
-          git push origin gh-pages
+          git push origin HEAD:gh-pages
 
           cd ${{ github.workspace }}
           git worktree remove /tmp/gh-pages-deploy --force
