@@ -630,21 +630,49 @@ function setupCompare() {
       const p = state.passports.find(x => x.iso === iso);
       if (!p) return;
       hiddenEl.value = p.iso;
+      const btn = document.getElementById('compareBtn');
+      if (document.getElementById('compareA').value && document.getElementById('compareB').value) {
+        btn.classList.add('ready');
+      } else {
+        btn.classList.remove('ready');
+      }
       inputEl.value  = p.name;
       flagDisplay.textContent = flag(p.iso);
+      flagDisplay.classList.remove('has-flag');
+      void flagDisplay.offsetWidth;
       flagDisplay.classList.add('has-flag');
-      listEl.classList.add('hidden');
+      listEl.style.opacity = '0';
+      listEl.style.transform = 'scale(0.96) translateY(-4px)';
+      setTimeout(() => listEl.classList.add('hidden'), 160);
     }
 
     inputEl.addEventListener('focus', () => {
       renderList(inputEl.value);
+      listEl.style.opacity = '0';
+      listEl.style.transform = 'scale(0.96) translateY(-4px)';
       listEl.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        listEl.style.opacity = '1';
+        listEl.style.transform = 'scale(1) translateY(0)';
+      });
     });
 
     inputEl.addEventListener('input', () => {
       hiddenEl.value = '';
+      const btn = document.getElementById('compareBtn');
+      if (document.getElementById('compareA').value && document.getElementById('compareB').value) {
+        btn.classList.add('ready');
+      } else {
+        btn.classList.remove('ready');
+      }
       renderList(inputEl.value);
+      listEl.style.opacity = '0';
+      listEl.style.transform = 'scale(0.96) translateY(-4px)';
       listEl.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        listEl.style.opacity = '1';
+        listEl.style.transform = 'scale(1) translateY(0)';
+      });
     });
 
     listEl.addEventListener('mousedown', e => {
@@ -655,7 +683,9 @@ function setupCompare() {
     });
 
     inputEl.addEventListener('blur', () => {
-      setTimeout(() => listEl.classList.add('hidden'), 150);
+      listEl.style.opacity = '0';
+      listEl.style.transform = 'scale(0.96) translateY(-4px)';
+      setTimeout(() => listEl.classList.add('hidden'), 160);
     });
 
     return { selectVal };
