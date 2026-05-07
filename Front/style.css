@@ -373,7 +373,7 @@ input, select {
   font-size: 13px;
   font-weight: 500;
   color: var(--c-muted);
-  transition: all 0.15s;
+  transition: color 0.15s, background 0.15s;
 }
 
 .sort-tab:hover {
@@ -399,7 +399,7 @@ input, select {
   padding: 7px 10px;
   border-radius: 6px;
   color: var(--c-muted);
-  transition: all 0.15s;
+  transition: color 0.15s, background 0.15s;
   display: flex;
   align-items: center;
 }
@@ -450,9 +450,11 @@ input, select {
 }
 
 .passport-card:hover {
-  transform: translateY(-2px);
   box-shadow: var(--shadow-md);
   border-color: var(--c-accent);
+}
+@media (hover: hover) and (pointer: fine) {
+  .passport-card:hover { transform: translateY(-2px); }
 }
 
 .card-rank-badge {
@@ -1424,7 +1426,9 @@ input, select {
   border-color: rgba(37,99,235,0.55);
   background: rgba(37,99,235,0.18);
   color: #93c5fd;
-  transform: translateY(-2px);
+}
+@media (hover: hover) and (pointer: fine) {
+  .popular-chip:hover { transform: translateY(-2px); }
 }
 
 .btn-primary {
@@ -2234,7 +2238,7 @@ input, select {
   font-size: 13px;
   font-weight: 600;
   color: var(--c-muted);
-  transition: all 0.15s;
+  transition: color 0.15s, background 0.15s;
 }
 
 .modal-tab:hover {
@@ -2351,8 +2355,8 @@ input, select {
 .toast.info { border-left: 3px solid var(--c-accent); }
 
 @keyframes toastIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .footer {
@@ -2634,11 +2638,13 @@ input, select {
 }
 
 .passport-card:hover {
-  transform: translateY(-5px) scale(1.018);
   box-shadow: 0 18px 48px rgba(0,0,0,0.5),
               0 0 0 1px rgba(96,165,250,0.35),
               0 0 40px rgba(37,99,235,0.1);
   border-color: rgba(96,165,250,0.4);
+}
+@media (hover: hover) and (pointer: fine) {
+  .passport-card:hover { transform: translateY(-5px) scale(1.018); }
 }
 
 /* ── TIER GOLD (#1) ───────────────────────────────────────── */
@@ -2668,11 +2674,13 @@ input, select {
 }
 
 .passport-card.tier-gold:hover {
-  transform: translateY(-7px) scale(1.02);
   box-shadow: 0 24px 64px rgba(0,0,0,0.65),
               0 0 0 1px rgba(251,191,36,0.55),
               0 0 64px rgba(251,191,36,0.22);
   border-color: rgba(251,191,36,0.65);
+}
+@media (hover: hover) and (pointer: fine) {
+  .passport-card.tier-gold:hover { transform: translateY(-7px) scale(1.02); }
 }
 
 /* ── TIER SILVER (#2) ─────────────────────────────────────── */
@@ -2700,11 +2708,13 @@ input, select {
 }
 
 .passport-card.tier-silver:hover {
-  transform: translateY(-7px) scale(1.02);
   box-shadow: 0 24px 64px rgba(0,0,0,0.65),
               0 0 0 1px rgba(203,213,225,0.45),
               0 0 55px rgba(148,163,184,0.2);
   border-color: rgba(203,213,225,0.55);
+}
+@media (hover: hover) and (pointer: fine) {
+  .passport-card.tier-silver:hover { transform: translateY(-7px) scale(1.02); }
 }
 
 /* ── TIER BRONZE (#3) ─────────────────────────────────────── */
@@ -2732,11 +2742,13 @@ input, select {
 }
 
 .passport-card.tier-bronze:hover {
-  transform: translateY(-7px) scale(1.02);
   box-shadow: 0 24px 64px rgba(0,0,0,0.65),
               0 0 0 1px rgba(205,127,50,0.45),
               0 0 55px rgba(180,100,50,0.2);
   border-color: rgba(205,127,50,0.55);
+}
+@media (hover: hover) and (pointer: fine) {
+  .passport-card.tier-bronze:hover { transform: translateY(-7px) scale(1.02); }
 }
 
 /* ── Rank badge ───────────────────────────────────────────── */
@@ -3016,7 +3028,7 @@ input, select {
 
 /* ── Easing tokens ──────────────────────────────────────────── */
 :root {
-  --ease-out-expo:  cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-expo:  cubic-bezier(0.23, 1, 0.32, 1);
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
@@ -3031,7 +3043,7 @@ input, select {
 
 /* ── Universal element entrance ─────────────────────────────── */
 @keyframes elemIn {
-  from { opacity: 0; transform: translateY(22px); }
+  from { opacity: 0; transform: translateY(22px) scale(0.97); }
   to   { opacity: 1; transform: none; }
 }
 
@@ -3052,7 +3064,7 @@ input, select {
 
 /* ── Dropdown slide open ────────────────────────────────────── */
 @keyframes dropIn {
-  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  from { opacity: 0; transform: translateY(-6px) scale(0.95); }
   to   { opacity: 1; transform: none; }
 }
 .cp-drop:not([hidden]) {
@@ -3060,15 +3072,15 @@ input, select {
 }
 
 /* ── Button press micro-interactions ────────────────────────── */
-.btn-primary:active  { transform: scale(0.96); transition: transform 0.07s; }
-.btn-signin:active   { transform: scale(0.96); transition: transform 0.07s; }
-.btn-outline:active  { transform: scale(0.97); transition: transform 0.07s; }
-.btn-danger:active   { transform: scale(0.97); transition: transform 0.07s; }
+.btn-primary:active  { transform: scale(0.96); transition: transform 130ms var(--ease-out-expo); }
+.btn-signin:active   { transform: scale(0.96); transition: transform 130ms var(--ease-out-expo); }
+.btn-outline:active  { transform: scale(0.97); transition: transform 130ms var(--ease-out-expo); }
+.btn-danger:active   { transform: scale(0.97); transition: transform 130ms var(--ease-out-expo); }
 .popular-chip:active { transform: scale(0.93) translateY(1px); }
 
 /* ── Sort tab + layout btn: smoother active ─────────────────── */
-.sort-tab   { transition: all 0.18s var(--ease-out-quart); }
-.layout-btn { transition: all 0.18s var(--ease-out-quart); }
+.sort-tab   { transition: color 0.18s var(--ease-out-quart), background 0.18s var(--ease-out-quart); }
+.layout-btn { transition: color 0.18s var(--ease-out-quart), background 0.18s var(--ease-out-quart); }
 
 /* ── Modal entrance ─────────────────────────────────────────── */
 @keyframes backdropIn {
@@ -3088,7 +3100,7 @@ input, select {
 
 /* ── Compare result reveal ──────────────────────────────────── */
 @keyframes resultReveal {
-  from { opacity: 0; transform: translateY(30px); }
+  from { opacity: 0; transform: translateY(30px) scale(0.97); }
   to   { opacity: 1; transform: none; }
 }
 
@@ -3133,7 +3145,10 @@ input, select {
 .detail-stat-cell:nth-child(3)      { animation-delay: 0.20s; }
 .detail-stat-cell:nth-child(4)      { animation-delay: 0.26s; }
 .detail-stat-cell { transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s; }
-.detail-stat-cell:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.detail-stat-cell:hover { box-shadow: var(--shadow-md); }
+@media (hover: hover) and (pointer: fine) {
+  .detail-stat-cell:hover { transform: translateY(-2px); }
+}
 
 /* ── Profile + privacy entrance ─────────────────────────────── */
 .profile-content {
@@ -3229,8 +3244,8 @@ input, select {
 .passport-row {
   transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s var(--ease-out-quart);
 }
-.passport-row:hover {
-  transform: translateX(3px);
+@media (hover: hover) and (pointer: fine) {
+  .passport-row:hover { transform: translateX(3px); }
 }
 
 /* ── Toast exit ─────────────────────────────────────────────── */

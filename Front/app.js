@@ -386,7 +386,7 @@ function renderGrid() {
   }
 
   grid.querySelectorAll('.passport-card, .passport-row').forEach((el, i) => {
-    el.style.animationDelay = `${Math.min(i * 0.045, 0.75)}s`;
+    el.style.animationDelay = `${Math.min(i * 0.045, 0.35)}s`;
   });
 
   requestAnimationFrame(() => {
