@@ -103,6 +103,10 @@ function initMap(container, fillMap, height) {
 
   let mapInstance = null;
   try {
+    const seriesRegions = fillMap && Object.keys(fillMap).length > 0
+      ? [{ values: fillMap, attribute: 'fill' }]
+      : [];
+
     mapInstance = new jsVectorMap({
       selector: inner,
       map: 'world',
@@ -111,23 +115,10 @@ function initMap(container, fillMap, height) {
       zoomButtons: false,
       regionStyle: {
         initial: { fill: JVM_COLORS.default, stroke: '#fff', strokeWidth: 0.5 },
-        hover: { fill: JVM_COLORS.default, fillOpacity: 0.8 },
+        hover: { fillOpacity: 0.75 },
       },
-      series: { regions: [] },
+      series: { regions: seriesRegions },
     });
-
-    if (fillMap && mapInstance.regions) {
-      Object.keys(fillMap).forEach(code => {
-        const color = fillMap[code];
-        const region = mapInstance.regions[code];
-        if (region && region.element && region.element.shape && region.element.shape.node) {
-          region.element.shape.node.setAttribute('fill', color);
-        } else {
-          const el = inner.querySelector('[data-code="' + code + '"]');
-          if (el) el.setAttribute('fill', color);
-        }
-      });
-    }
   } catch(e) {
     inner.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#6b7280;font-size:14px;">Map unavailable</div>';
   }
