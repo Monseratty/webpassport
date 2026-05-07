@@ -199,7 +199,7 @@ function showView(name) {
   setActiveNavLink(name);
   window.scrollTo(0, 0);
   if (name === 'auth') animateAuthStats();
-  if (name === 'compare' && !state.passports.length) loadRankings();
+  if (name === 'compare') ensurePassports().catch(() => {});
 }
 
 function animateAuthStats() {
@@ -603,6 +603,27 @@ function renderDestList(destinations, filterType, query) {
 
 const cpHandlers = {};
 let cpInited = false;
+let _passportsPromise = null;
+
+function ensurePassports() {
+  if (state.passports.length) return Promise.resolve();
+  if (!_passportsPromise) {
+    _passportsPromise = apiFetch('/rank').then(data => {
+      state.passports = (data.passports || []).map(p => ({
+        name: p.name,
+        iso: p.isoShortCode,
+        rank: p.worldRank,
+        total: p.mobilityScore,
+        vf: 0, voa: 0, ev: 0, vr: 0,
+      }));
+      _passportsPromise = null;
+    }).catch(e => {
+      _passportsPromise = null;
+      throw e;
+    });
+  }
+  return _passportsPromise;
+}
 
 function populateCompareSelects() {
   initCustomSelects();
@@ -626,11 +647,6 @@ function initCustomSelects() {
     let currentVal = '';
 
     function renderList(q) {
-      if (!state.passports.length) {
-        list.innerHTML = '<div class="cp-no-results">Loading countries…</div>';
-        loadRankings().then(() => renderList(q)).catch(() => {});
-        return;
-      }
       const query = norm(q);
       const items = query
         ? state.passports.filter(p => norm(p.name).includes(query) || norm(p.iso).includes(query))
@@ -651,12 +667,19 @@ function initCustomSelects() {
       );
     }
 
-    function openDrop() {
+    async function openDrop() {
       drop.removeAttribute('hidden');
       wrap.classList.add('open');
       search.value = '';
-      renderList('');
       search.focus();
+      if (!state.passports.length) {
+        list.innerHTML = '<div class="cp-no-results">Loading countries…</div>';
+        try { await ensurePassports(); } catch(e) {
+          list.innerHTML = '<div class="cp-no-results">Failed to load. Try again.</div>';
+          return;
+        }
+      }
+      renderList('');
       const sel = list.querySelector('.selected');
       if (sel) sel.scrollIntoView({ block: 'nearest' });
     }
