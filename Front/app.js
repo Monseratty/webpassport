@@ -703,10 +703,12 @@ async function doCompare() {
       destroyActiveMap();
       const fillA = buildFillMap(destA, isoA);
       const fillB = buildFillMap(destB, isoB);
-      const mapContA = document.getElementById('compareMapA');
-      const mapContB = document.getElementById('compareMapB');
-      if (mapContA) state.activeMap = initMap(mapContA, fillA, 280);
-      if (mapContB) state.activeMapB = initMap(mapContB, fillB, 280);
+      setTimeout(() => {
+        const mapContA = document.getElementById('compareMapA');
+        const mapContB = document.getElementById('compareMapB');
+        if (mapContA) state.activeMap = initMap(mapContA, fillA, 280);
+        if (mapContB) state.activeMapB = initMap(mapContB, fillB, 280);
+      }, 0);
     }).catch(() => {});
 
   } catch(e) {
