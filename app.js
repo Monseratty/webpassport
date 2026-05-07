@@ -13,10 +13,8 @@ const JVM_COLORS = {
 };
 
 function flag(iso) {
-  if (!iso || iso.length !== 2) return '🏳️';
-  const base = 0x1F1E6 - 65;
-  return String.fromCodePoint(base + iso.toUpperCase().charCodeAt(0)) +
-         String.fromCodePoint(base + iso.toUpperCase().charCodeAt(1));
+  if (!iso || iso.length !== 2) return '<span class="flag-unknown">🏳</span>';
+  return `<img class="flag-img" src="https://flagcdn.com/${iso.toLowerCase()}.svg" alt="${iso}" loading="lazy">`;
 }
 
 function norm(s) {
@@ -637,7 +635,7 @@ function setupCompare() {
         btn.classList.remove('ready');
       }
       inputEl.value  = p.name;
-      flagDisplay.textContent = flag(p.iso);
+      flagDisplay.innerHTML = flag(p.iso);
       flagDisplay.classList.remove('has-flag');
       void flagDisplay.offsetWidth;
       flagDisplay.classList.add('has-flag');

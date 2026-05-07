@@ -1145,6 +1145,43 @@ input, select {
   animation: flagPop 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* Cross-platform flag images */
+.flag-img {
+  display: inline-block;
+  vertical-align: middle;
+  height: 1em;
+  width: auto;
+  border-radius: 2px;
+  object-fit: cover;
+}
+
+/* Flag in the circular picker display */
+.cp-flag-display .flag-img {
+  width: 42px;
+  height: auto;
+  border-radius: 4px;
+}
+
+/* Flag in detail page header */
+.detail-flag .flag-img {
+  width: 72px;
+  height: auto;
+  border-radius: 6px;
+}
+
+/* Flag in cards and list rows */
+.card-flag .flag-img,
+.row-flag .flag-img {
+  height: 1.4em;
+  width: auto;
+}
+
+/* Flag in modal grid */
+.modal-item-flag .flag-img {
+  height: 1.6em;
+  width: auto;
+}
+
 .cp-field-wrap {
   flex: 1;
   position: relative;
