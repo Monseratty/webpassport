@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.base.css" />
 </head>
 <body>
 
@@ -95,15 +96,29 @@
         <h1 class="compare-title">Compare Passports</h1>
         <p class="compare-subtitle">Select two passports to see a detailed side-by-side comparison of their visa access.</p>
       </div>
-      <div class="compare-selector">
-        <select id="compareA" class="compare-select">
-          <option value="">Select Passport A…</option>
-        </select>
-        <div class="compare-vs">VS</div>
-        <select id="compareB" class="compare-select">
-          <option value="">Select Passport B…</option>
-        </select>
-        <button class="btn-primary" id="compareBtn">Compare</button>
+      <div class="compare-picker-card">
+        <div class="compare-picker-slot">
+          <div class="compare-picker-flag-wrap">
+            <span class="compare-picker-flag" id="pickerFlagA">🌐</span>
+          </div>
+          <div class="compare-picker-body">
+            <div class="compare-picker-label">Passport A</div>
+            <select id="compareA"></select>
+          </div>
+        </div>
+        <div class="compare-vs-col">
+          <div class="compare-vs-ring">VS</div>
+          <button class="btn-primary compare-go-btn" id="compareBtn">Compare</button>
+        </div>
+        <div class="compare-picker-slot">
+          <div class="compare-picker-flag-wrap">
+            <span class="compare-picker-flag" id="pickerFlagB">🌐</span>
+          </div>
+          <div class="compare-picker-body">
+            <div class="compare-picker-label">Passport B</div>
+            <select id="compareB"></select>
+          </div>
+        </div>
       </div>
       <div id="compareResult"></div>
     </div>
@@ -289,6 +304,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/jsvectormap@1.6.0/dist/jsvectormap.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/jsvectormap@1.6.0/dist/maps/world.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js" defer></script>
   <script src="app.js" defer></script>
 </body>
 </html>
