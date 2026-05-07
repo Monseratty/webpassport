@@ -1112,13 +1112,55 @@ input, select {
   justify-content: center;
   font-size: 32px;
   line-height: 1;
+  position: relative;
   transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+  overflow: visible;
 }
+
+/* Animated rings when empty */
+.compare-picker-flag-wrap.empty {
+  animation: flag-pulse 3s ease-in-out infinite;
+}
+
+@keyframes flag-pulse {
+  0%, 100% { border-color: rgba(255,255,255,0.1); }
+  50% { border-color: rgba(59,130,246,0.35); }
+}
+
+.compare-picker-flag-wrap.empty::before {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(59,130,246,0.22);
+  animation: spin-cw 9s linear infinite;
+}
+
+.compare-picker-flag-wrap.empty::after {
+  content: '';
+  position: absolute;
+  inset: -14px;
+  border-radius: 50%;
+  border: 1px dashed rgba(59,130,246,0.1);
+  animation: spin-ccw 14s linear infinite;
+}
+
+@keyframes spin-cw  { to { transform: rotate(360deg); } }
+@keyframes spin-ccw { to { transform: rotate(-360deg); } }
 
 .compare-picker-flag-wrap.active {
   border-color: rgba(59,130,246,0.55);
   background: rgba(37,99,235,0.1);
   box-shadow: 0 0 20px rgba(37,99,235,0.22);
+}
+
+/* Plus sign in empty state */
+.compare-picker-flag-wrap.empty .compare-picker-flag {
+  font-size: 22px;
+  font-weight: 200;
+  color: rgba(255,255,255,0.22);
+  line-height: 1;
+  font-family: var(--font);
 }
 
 .compare-picker-body {
@@ -1175,13 +1217,33 @@ input, select {
 /* TomSelect — dark theme scoped to picker */
 .compare-picker-slot .ts-wrapper {
   width: 100%;
+  position: relative;
+}
+
+/* Chevron arrow */
+.compare-picker-slot .ts-wrapper::after {
+  content: '';
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  border-left: 4.5px solid transparent;
+  border-right: 4.5px solid transparent;
+  border-top: 5px solid rgba(255,255,255,0.3);
+  transition: transform 0.2s;
+  z-index: 2;
+}
+
+.compare-picker-slot .ts-wrapper.focus::after {
+  transform: translateY(-50%) rotate(180deg);
 }
 
 .compare-picker-slot .ts-control {
   background: rgba(255,255,255,0.07) !important;
   border: 1.5px solid rgba(255,255,255,0.12) !important;
   border-radius: 10px !important;
-  padding: 10px 14px !important;
+  padding: 10px 40px 10px 14px !important;
   font-size: 14px !important;
   font-family: var(--font) !important;
   cursor: pointer !important;
@@ -1200,10 +1262,15 @@ input, select {
   color: #fff !important;
   font-family: var(--font) !important;
   font-size: 14px !important;
+  caret-color: transparent !important;
+}
+
+.compare-picker-slot .ts-wrapper.focus .ts-control input {
+  caret-color: rgba(255,255,255,0.7) !important;
 }
 
 .compare-picker-slot .ts-control input::placeholder {
-  color: rgba(255,255,255,0.3) !important;
+  color: rgba(255,255,255,0.28) !important;
 }
 
 .compare-picker-slot .ts-dropdown {
