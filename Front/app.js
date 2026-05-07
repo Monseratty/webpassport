@@ -605,7 +605,7 @@ function populateCompareSelects() {
     rank: p.rank || 999,
   }));
 
-  function tsConfig(flagElId) {
+  function tsConfig(flagElId, wrapId) {
     return {
       maxItems: 1,
       placeholder: 'Search country…',
@@ -626,13 +626,22 @@ function populateCompareSelects() {
       },
       onChange(val) {
         const flagEl = document.getElementById(flagElId);
-        if (flagEl) flagEl.textContent = val ? flag(val) : '🌐';
+        const wrap = document.getElementById(wrapId);
+        if (flagEl) {
+          if (val) {
+            flagEl.textContent = flag(val);
+            flagEl.style.fontSize = '32px';
+          } else {
+            flagEl.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+          }
+        }
+        if (wrap) wrap.classList.toggle('active', !!val);
       },
     };
   }
 
-  new TomSelect('#compareA', tsConfig('pickerFlagA'));
-  new TomSelect('#compareB', tsConfig('pickerFlagB'));
+  new TomSelect('#compareA', tsConfig('pickerFlagA', 'flagWrapA'));
+  new TomSelect('#compareB', tsConfig('pickerFlagB', 'flagWrapB'));
 }
 
 async function doCompare() {
@@ -1310,6 +1319,18 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('compareBtn').addEventListener('click', doCompare);
+
+  document.getElementById('popularChips').addEventListener('click', e => {
+    const chip = e.target.closest('.popular-chip');
+    if (!chip) return;
+    const isoA = chip.dataset.a;
+    const isoB = chip.dataset.b;
+    const elA = document.getElementById('compareA');
+    const elB = document.getElementById('compareB');
+    if (elA.tomselect) elA.tomselect.setValue(isoA);
+    if (elB.tomselect) elB.tomselect.setValue(isoB);
+    doCompare();
+  });
 
   document.getElementById('tabSignIn').addEventListener('click', () => {
     state.authMode = 'login';
