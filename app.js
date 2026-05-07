@@ -585,16 +585,61 @@ function populateCompareSelects() {
   const selA = document.getElementById('compareA');
   const selB = document.getElementById('compareB');
   if (!selA || !selB) return;
-  const opts = state.passports.map(p =>
-    `<option value="${p.iso}">${flag(p.iso)} ${p.name}</option>`
-  ).join('');
-  selA.innerHTML = '<option value="">Select Passport A…</option>' + opts;
-  selB.innerHTML = '<option value="">Select Passport B…</option>' + opts;
+
+  if (typeof TomSelect === 'undefined') {
+    const opts = state.passports.map(p =>
+      `<option value="${p.iso}">${flag(p.iso)} ${p.name}</option>`
+    ).join('');
+    selA.innerHTML = '<option value="">Select Passport A…</option>' + opts;
+    selB.innerHTML = '<option value="">Select Passport B…</option>' + opts;
+    return;
+  }
+
+  if (selA.tomselect) selA.tomselect.destroy();
+  if (selB.tomselect) selB.tomselect.destroy();
+
+  const options = state.passports.map(p => ({
+    value: p.iso,
+    text: p.name,
+    isoCode: p.iso,
+    rank: p.rank || 999,
+  }));
+
+  function tsConfig(flagElId) {
+    return {
+      maxItems: 1,
+      placeholder: 'Search country…',
+      searchField: ['text', 'isoCode'],
+      options,
+      render: {
+        option: (data, escape) => `
+          <div class="ts-opt">
+            <span class="ts-opt-flag">${flag(data.isoCode)}</span>
+            <span class="ts-opt-name">${escape(data.text)}</span>
+            <span class="ts-opt-rank">#${data.rank !== 999 ? data.rank : '—'}</span>
+          </div>`,
+        item: (data, escape) => `
+          <div class="ts-item-inner">
+            <span>${flag(data.isoCode)}</span>
+            <span>${escape(data.text)}</span>
+          </div>`,
+      },
+      onChange(val) {
+        const flagEl = document.getElementById(flagElId);
+        if (flagEl) flagEl.textContent = val ? flag(val) : '🌐';
+      },
+    };
+  }
+
+  new TomSelect('#compareA', tsConfig('pickerFlagA'));
+  new TomSelect('#compareB', tsConfig('pickerFlagB'));
 }
 
 async function doCompare() {
-  const isoA = document.getElementById('compareA').value;
-  const isoB = document.getElementById('compareB').value;
+  const elA = document.getElementById('compareA');
+  const elB = document.getElementById('compareB');
+  const isoA = elA.tomselect ? elA.tomselect.getValue() : elA.value;
+  const isoB = elB.tomselect ? elB.tomselect.getValue() : elB.value;
   const result = document.getElementById('compareResult');
 
   if (!isoA || !isoB) { showToast('Please select two passports', 'info'); return; }
