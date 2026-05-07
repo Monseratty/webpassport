@@ -614,8 +614,7 @@ function setupCompare() {
     function renderList(filter) {
       const q = (filter || '').toLowerCase().trim();
       const items = state.passports
-        .filter(p => !q || p.name.toLowerCase().includes(q) || p.iso.toLowerCase().includes(q))
-        .slice(0, 80);
+        .filter(p => !q || p.name.toLowerCase().includes(q) || p.iso.toLowerCase().includes(q));
       listEl.innerHTML = items.length
         ? items.map(p =>
             `<div class="cp-item" data-iso="${p.iso}">` +
