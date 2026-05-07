@@ -581,80 +581,103 @@ function renderDestList(destinations, filterType, query) {
     </div>`).join('');
 }
 
+const cpHandlers = {};
+
 function populateCompareSelects() {
-  const selA = document.getElementById('compareA');
-  const selB = document.getElementById('compareB');
-  if (!selA || !selB) return;
+  initCustomSelects();
+}
 
-  if (typeof TomSelect === 'undefined') {
-    const opts = state.passports.map(p =>
-      `<option value="${p.iso}">${flag(p.iso)} ${p.name}</option>`
-    ).join('');
-    selA.innerHTML = '<option value="">Select Passport A…</option>' + opts;
-    selB.innerHTML = '<option value="">Select Passport B…</option>' + opts;
-    return;
-  }
+function initCustomSelects() {
+  ['A', 'B'].forEach(side => {
+    const wrap    = document.getElementById('cpWrap' + side);
+    const trig    = document.getElementById('cpTrig' + side);
+    const content = document.getElementById('cpContent' + side);
+    const drop    = document.getElementById('cpDrop' + side);
+    const search  = document.getElementById('cpSearch' + side);
+    const list    = document.getElementById('cpList' + side);
+    const hidden  = document.getElementById('compare' + side);
+    const flagEl  = document.getElementById('pickerFlag' + side);
+    const flagWrap = document.getElementById('flagWrap' + side);
+    if (!wrap || !trig) return;
 
-  if (selA.tomselect) selA.tomselect.destroy();
-  if (selB.tomselect) selB.tomselect.destroy();
+    let currentVal = '';
 
-  const options = state.passports.map(p => ({
-    value: p.iso,
-    text: p.name,
-    isoCode: p.iso,
-    rank: p.rank || 999,
-  }));
+    function renderList(q) {
+      const query = norm(q);
+      const items = query
+        ? state.passports.filter(p => norm(p.name).includes(query) || norm(p.iso).includes(query))
+        : state.passports;
+      if (!items.length) {
+        list.innerHTML = '<div class="cp-no-results">No results found</div>';
+        return;
+      }
+      list.innerHTML = items.map(p =>
+        `<div class="cp-item${p.iso === currentVal ? ' selected' : ''}" data-iso="${p.iso}">` +
+        `<span class="cp-item-flag">${flag(p.iso)}</span>` +
+        `<span class="cp-item-name">${p.name}</span>` +
+        (p.rank ? `<span class="cp-item-rank">#${p.rank}</span>` : '') +
+        `</div>`
+      ).join('');
+      list.querySelectorAll('.cp-item').forEach(el =>
+        el.addEventListener('click', () => selectVal(el.dataset.iso))
+      );
+    }
 
-  function tsConfig(flagElId, wrapId) {
-    return {
-      maxItems: 1,
-      placeholder: 'Search country…',
-      searchField: ['text', 'isoCode'],
-      options,
-      render: {
-        option: (data, escape) => `
-          <div class="ts-opt">
-            <span class="ts-opt-flag">${flag(data.isoCode)}</span>
-            <span class="ts-opt-name">${escape(data.text)}</span>
-            <span class="ts-opt-rank">#${data.rank !== 999 ? data.rank : '—'}</span>
-          </div>`,
-        item: (data, escape) => `
-          <div class="ts-item-inner">
-            <span>${flag(data.isoCode)}</span>
-            <span>${escape(data.text)}</span>
-          </div>`,
-      },
-      onChange(val) {
-        const flagEl = document.getElementById(flagElId);
-        const wrap = document.getElementById(wrapId);
-        if (flagEl) {
-          if (val) {
-            flagEl.textContent = flag(val);
-            flagEl.style.fontSize = '32px';
-            flagEl.style.lineHeight = '1';
-          } else {
-            flagEl.textContent = '+';
-            flagEl.style.fontSize = '';
-            flagEl.style.lineHeight = '';
-          }
-        }
-        if (wrap) {
-          wrap.classList.toggle('active', !!val);
-          wrap.classList.toggle('empty', !val);
-        }
-      },
-    };
-  }
+    function openDrop() {
+      drop.removeAttribute('hidden');
+      wrap.classList.add('open');
+      search.value = '';
+      renderList('');
+      search.focus();
+      const sel = list.querySelector('.selected');
+      if (sel) sel.scrollIntoView({ block: 'nearest' });
+    }
 
-  new TomSelect('#compareA', tsConfig('pickerFlagA', 'flagWrapA'));
-  new TomSelect('#compareB', tsConfig('pickerFlagB', 'flagWrapB'));
+    function closeDrop() {
+      drop.setAttribute('hidden', '');
+      wrap.classList.remove('open');
+    }
+
+    function selectVal(iso) {
+      currentVal = iso;
+      if (hidden) hidden.value = iso;
+      const p = state.passports.find(pp => pp.iso === iso);
+      content.innerHTML =
+        `<span class="cp-sel-flag">${flag(iso)}</span>` +
+        `<span class="cp-sel-name">${p ? p.name : iso}</span>`;
+      if (flagEl) {
+        flagEl.textContent = flag(iso);
+        flagEl.style.fontSize = '32px';
+        flagEl.style.lineHeight = '1';
+      }
+      if (flagWrap) {
+        flagWrap.classList.remove('empty');
+        flagWrap.classList.add('active');
+      }
+      closeDrop();
+    }
+
+    trig.addEventListener('click', e => {
+      if (wrap.classList.contains('open')) { closeDrop(); return; }
+      document.querySelectorAll('.cp-wrap.open').forEach(el => {
+        if (el !== wrap) { el.querySelector('.cp-drop').setAttribute('hidden', ''); el.classList.remove('open'); }
+      });
+      openDrop();
+    });
+
+    search.addEventListener('input', () => renderList(search.value));
+
+    document.addEventListener('click', e => {
+      if (!wrap.contains(e.target)) closeDrop();
+    }, true);
+
+    cpHandlers[side] = { selectVal };
+  });
 }
 
 async function doCompare() {
-  const elA = document.getElementById('compareA');
-  const elB = document.getElementById('compareB');
-  const isoA = elA.tomselect ? elA.tomselect.getValue() : elA.value;
-  const isoB = elB.tomselect ? elB.tomselect.getValue() : elB.value;
+  const isoA = (document.getElementById('compareA') || {}).value || '';
+  const isoB = (document.getElementById('compareB') || {}).value || '';
   const result = document.getElementById('compareResult');
 
   if (!isoA || !isoB) { showToast('Please select two passports', 'info'); return; }
@@ -1329,12 +1352,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('popularChips').addEventListener('click', e => {
     const chip = e.target.closest('.popular-chip');
     if (!chip) return;
-    const isoA = chip.dataset.a;
-    const isoB = chip.dataset.b;
-    const elA = document.getElementById('compareA');
-    const elB = document.getElementById('compareB');
-    if (elA.tomselect) elA.tomselect.setValue(isoA);
-    if (elB.tomselect) elB.tomselect.setValue(isoB);
+    if (cpHandlers.A) cpHandlers.A.selectVal(chip.dataset.a);
+    if (cpHandlers.B) cpHandlers.B.selectVal(chip.dataset.b);
     doCompare();
   });
 

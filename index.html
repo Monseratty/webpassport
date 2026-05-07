@@ -8,7 +8,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.base.css" />
 </head>
 <body>
 
@@ -109,7 +108,22 @@
           </div>
           <div class="compare-picker-body">
             <div class="compare-picker-label">Passport A</div>
-            <select id="compareA"></select>
+            <div class="cp-wrap" id="cpWrapA">
+              <div class="cp-trigger" id="cpTrigA" tabindex="0" role="combobox">
+                <span class="cp-trigger-inner" id="cpContentA">
+                  <span class="cp-placeholder">Search country…</span>
+                </span>
+                <svg class="cp-chevron" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="cp-drop" id="cpDropA" hidden>
+                <div class="cp-search-row">
+                  <svg class="cp-search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M14 14l3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  <input class="cp-search-input" id="cpSearchA" type="text" placeholder="Search country…" autocomplete="off">
+                </div>
+                <div class="cp-list" id="cpListA"></div>
+              </div>
+            </div>
+            <input type="hidden" id="compareA">
           </div>
         </div>
         <div class="compare-vs-col">
@@ -122,7 +136,22 @@
           </div>
           <div class="compare-picker-body">
             <div class="compare-picker-label">Passport B</div>
-            <select id="compareB"></select>
+            <div class="cp-wrap" id="cpWrapB">
+              <div class="cp-trigger" id="cpTrigB" tabindex="0" role="combobox">
+                <span class="cp-trigger-inner" id="cpContentB">
+                  <span class="cp-placeholder">Search country…</span>
+                </span>
+                <svg class="cp-chevron" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="cp-drop" id="cpDropB" hidden>
+                <div class="cp-search-row">
+                  <svg class="cp-search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M14 14l3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  <input class="cp-search-input" id="cpSearchB" type="text" placeholder="Search country…" autocomplete="off">
+                </div>
+                <div class="cp-list" id="cpListB"></div>
+              </div>
+            </div>
+            <input type="hidden" id="compareB">
           </div>
         </div>
       </div>
@@ -323,7 +352,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/jsvectormap@1.6.0/dist/jsvectormap.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/jsvectormap@1.6.0/dist/maps/world.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js" defer></script>
   <script src="app.js" defer></script>
 </body>
 </html>
