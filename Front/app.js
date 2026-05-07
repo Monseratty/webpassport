@@ -199,6 +199,7 @@ function showView(name) {
   setActiveNavLink(name);
   window.scrollTo(0, 0);
   if (name === 'auth') animateAuthStats();
+  if (name === 'compare' && !state.passports.length) loadRankings();
 }
 
 function animateAuthStats() {
@@ -601,12 +602,15 @@ function renderDestList(destinations, filterType, query) {
 }
 
 const cpHandlers = {};
+let cpInited = false;
 
 function populateCompareSelects() {
   initCustomSelects();
 }
 
 function initCustomSelects() {
+  if (cpInited) return;
+  cpInited = true;
   ['A', 'B'].forEach(side => {
     const wrap    = document.getElementById('cpWrap' + side);
     const trig    = document.getElementById('cpTrig' + side);
@@ -622,6 +626,11 @@ function initCustomSelects() {
     let currentVal = '';
 
     function renderList(q) {
+      if (!state.passports.length) {
+        list.innerHTML = '<div class="cp-no-results">Loading countries…</div>';
+        loadRankings().then(() => renderList(q)).catch(() => {});
+        return;
+      }
       const query = norm(q);
       const items = query
         ? state.passports.filter(p => norm(p.name).includes(query) || norm(p.iso).includes(query))
@@ -1332,6 +1341,7 @@ function initHeroCanvas() {
 document.addEventListener('DOMContentLoaded', () => {
   initHeroCanvas();
   initAuthFlags();
+  initCustomSelects();
   restoreSession();
   wireNavLinks();
   loadRankings();
