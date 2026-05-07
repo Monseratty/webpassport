@@ -1226,6 +1226,7 @@ function wireNavLinks() {
       }
       if (view === 'auth' && state.user) return;
       showView(view);
+      if (view === 'compare') populateCompareSelects();
     });
   });
 }
