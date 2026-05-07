@@ -1146,40 +1146,32 @@ input, select {
 }
 
 /* Cross-platform flag images */
-.flag-img {
-  display: inline-block;
-  vertical-align: middle;
-  height: 1em;
-  width: auto;
+.fi {
   border-radius: 2px;
-  object-fit: cover;
+  vertical-align: middle;
 }
 
-/* Flag in the circular picker display */
-.cp-flag-display .flag-img {
-  width: 42px;
-  height: auto;
+.cp-flag-display .fi {
+  width: 42px !important;
+  height: 30px !important;
   border-radius: 4px;
+  display: block;
 }
 
-/* Flag in detail page header */
-.detail-flag .flag-img {
-  width: 72px;
-  height: auto;
+.detail-flag .fi {
+  width: 72px !important;
+  height: 52px !important;
   border-radius: 6px;
+  display: inline-block;
 }
 
-/* Flag in cards and list rows */
-.card-flag .flag-img,
-.row-flag .flag-img {
-  height: 1.4em;
-  width: auto;
+.card-flag .fi,
+.row-flag .fi {
+  font-size: 1.4em;
 }
 
-/* Flag in modal grid */
-.modal-item-flag .flag-img {
-  height: 1.6em;
-  width: auto;
+.modal-item-flag .fi {
+  font-size: 1.6em;
 }
 
 .cp-field-wrap {
