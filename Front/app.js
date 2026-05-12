@@ -179,7 +179,7 @@ const VectorMap = {
   watch: {
     series: {
       deep: true,
-      handler() { this.rebuild() }
+      handler() { this.applyColors() }
     }
   },
   mounted() { nextTick(() => this.init()) },
@@ -188,12 +188,24 @@ const VectorMap = {
   },
   methods: {
     COLORS() {
-      return { vf: '#16a34a', voa: '#2563eb', ev: '#eab308', vr: '#dc2626', own: '#064e3b', visited: '#7c3aed' }
+      return { vf: '#22c55e', voa: '#3b82f6', ev: '#eab308', vr: '#ef4444', own: '#15803d', visited: '#a855f7' }
     },
-    buildValues() {
-      const C = this.COLORS(), values = {}
-      Object.entries(this.series).forEach(([iso, type]) => { if (C[type]) values[iso] = C[type] })
-      return values
+    applyColors() {
+      if (!this._map) return
+      const C = this.COLORS()
+      const regions = this._map.regions
+      if (!regions) return
+      // reset all regions to base color first
+      Object.values(regions).forEach(r => {
+        try { r.element.setStyle('fill', '#1e293b') } catch {}
+      })
+      // apply visa colors
+      Object.entries(this.series).forEach(([iso, type]) => {
+        const color = C[type]
+        if (color && regions[iso]) {
+          try { regions[iso].element.setStyle('fill', color) } catch {}
+        }
+      })
     },
     init() {
       if (typeof jsVectorMap === 'undefined') {
@@ -208,19 +220,12 @@ const VectorMap = {
           backgroundColor: 'transparent',
           zoomOnScroll: false,
           regionStyle: {
-            initial:  { fill: '#1e293b', stroke: '#0d1b2e', strokeWidth: 0.4 },
-            hover:    { fill: '#3b82f6', fillOpacity: 0.8 },
-            selected: { fill: '#60a5fa' }
-          },
-          series: {
-            regions: [{ attribute: 'fill', values: this.buildValues() }]
+            initial: { fill: '#1e293b', stroke: '#0f172a', strokeWidth: 0.5 },
+            hover:   { fillOpacity: 0.75 }
           }
         })
+        this.applyColors()
       } catch (e) { console.warn('VectorMap init error', e) }
-    },
-    rebuild() {
-      try { if (this._map) { this._map.destroy(); this._map = null } } catch {}
-      nextTick(() => this.init())
     }
   },
   template: `<div :id="uid" :style="{ height, width: '100%' }"></div>`
@@ -322,8 +327,8 @@ createApp({
     const DEST_CATS = [
       { key: 'Visa free',       tKey: 'cat_vf',  cls: 'chip-vf',  statCls: 'stat-vf'  },
       { key: 'Visa on arrival', tKey: 'cat_voa', cls: 'chip-voa', statCls: 'stat-voa' },
-      { key: 'E-Visa',          tKey: 'cat_ev',  cls: 'chip-ev',  statCls: 'stat-ev'  },
-      { key: 'Required',        tKey: 'cat_vr',  cls: 'chip-vr',  statCls: 'stat-vr'  },
+      { key: 'ETA',             tKey: 'cat_ev',  cls: 'chip-ev',  statCls: 'stat-ev'  },
+      { key: 'Visa required',   tKey: 'cat_vr',  cls: 'chip-vr',  statCls: 'stat-vr'  },
     ]
 
     const filteredDests = computed(() => {
@@ -338,7 +343,7 @@ createApp({
       if (!detail.value) return 0
       if (cat.key === 'Visa free')       return detail.value.visaFreeCount || 0
       if (cat.key === 'Visa on arrival') return detail.value.visaOnArrivalCount || 0
-      if (cat.key === 'E-Visa')          return detail.value.etaCount || 0
+      if (cat.key === 'ETA')              return detail.value.etaCount || 0
       return detail.value.requiredVisaCount || 0
     }
 
@@ -347,8 +352,8 @@ createApp({
       const s = {}
       ;(detail.value.destinations['Visa free']       || []).forEach(d => { s[d.isoShortCode] = 'vf'  })
       ;(detail.value.destinations['Visa on arrival'] || []).forEach(d => { s[d.isoShortCode] = 'voa' })
-      ;(detail.value.destinations['E-Visa']          || []).forEach(d => { s[d.isoShortCode] = 'ev'  })
-      ;(detail.value.destinations['Required']        || []).forEach(d => { s[d.isoShortCode] = 'vr'  })
+      ;(detail.value.destinations['ETA']             || []).forEach(d => { s[d.isoShortCode] = 'ev'  })
+      ;(detail.value.destinations['Visa required']  || []).forEach(d => { s[d.isoShortCode] = 'vr'  })
       if (detail.value.isoShortCode) s[detail.value.isoShortCode] = 'own'
       return s
     })
@@ -380,8 +385,8 @@ createApp({
       const s = {}
       ;(passport.destinations['Visa free']       || []).forEach(d => { s[d.isoShortCode] = 'vf'  })
       ;(passport.destinations['Visa on arrival'] || []).forEach(d => { s[d.isoShortCode] = 'voa' })
-      ;(passport.destinations['E-Visa']          || []).forEach(d => { s[d.isoShortCode] = 'ev'  })
-      ;(passport.destinations['Required']        || []).forEach(d => { s[d.isoShortCode] = 'vr'  })
+      ;(passport.destinations['ETA']             || []).forEach(d => { s[d.isoShortCode] = 'ev'  })
+      ;(passport.destinations['Visa required']  || []).forEach(d => { s[d.isoShortCode] = 'vr'  })
       if (passport.isoShortCode) s[passport.isoShortCode] = 'own'
       return s
     }
