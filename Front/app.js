@@ -16,7 +16,11 @@ async function apiFetch(path, opts = {}) {
     try { const j = await res.json(); msg = j.message || j.error || msg } catch {}
     throw new Error(msg)
   }
-  return res.json()
+  const ct = res.headers.get('content-type') || ''
+  const len = res.headers.get('content-length')
+  if (len === '0' || (!ct.includes('json') && len !== null)) return null
+  const text = await res.text()
+  return text ? JSON.parse(text) : null
 }
 const apiGet    = p       => apiFetch(p)
 const apiPost   = (p, b) => apiFetch(p, { method: 'POST',   body: JSON.stringify(b) })
