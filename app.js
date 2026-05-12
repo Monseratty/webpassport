@@ -196,7 +196,7 @@ const VectorMap = {
       return values
     },
     init() {
-      if (typeof jsVectorMap === 'undefined' || !jsVectorMap.maps?.world) {
+      if (typeof jsVectorMap === 'undefined') {
         setTimeout(() => this.init(), 300); return
       }
       const el = this.$el
