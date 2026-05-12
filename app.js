@@ -456,8 +456,26 @@ createApp({
     async function loadStack() {
       if (!loggedIn.value) return
       stackLoading.value = true
-      try { stack.value = await apiGet('/stack') }
-      catch (e) { pushToast('Could not load profile: ' + e.message, 'error') }
+      try {
+        const [profile, destinations] = await Promise.all([
+          apiGet('/u/' + username.value),
+          apiGet('/stack')
+        ])
+        const vf  = (destinations['Visa free']       || []).length
+        const voa = (destinations['Visa on arrival'] || []).length
+        const eta = (destinations['ETA']             || []).length
+        const vr  = (destinations['Visa required']   || []).length
+        stack.value = {
+          passports:          profile.passports        || [],
+          visitedCountries:   profile.countries        || [],
+          visaFreeCount:      vf,
+          visaOnArrivalCount: voa,
+          etaCount:           eta,
+          requiredVisaCount:  vr,
+          mobilityScore:      vf + voa + eta,
+          destinations
+        }
+      } catch (e) { pushToast('Could not load profile: ' + e.message, 'error') }
       finally { stackLoading.value = false }
     }
 
