@@ -1067,6 +1067,71 @@ input, select {
 /* ── COMPARE VIEW DARK BASE ─────────────────── */
 #view-compare {
   background: #07101e;
+  min-height: 100vh;
+}
+
+/* ── Force dark theme for cpick inside compare ──────────────────── */
+#view-compare .cpick-trigger {
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+  color: #e8f0fe !important;
+}
+#view-compare .cpick-trigger:hover,
+#view-compare .cpick--open .cpick-trigger {
+  border-color: rgba(96,165,250,0.5) !important;
+  background: rgba(255,255,255,0.11) !important;
+}
+#view-compare .cpick-placeholder { color: rgba(255,255,255,0.35) !important; }
+#view-compare .cpick-name        { color: #e8f0fe !important; }
+#view-compare .cpick-chevron     { color: rgba(255,255,255,0.4) !important; }
+
+#view-compare .cpick-dropdown {
+  background: #0f1f38 !important;
+  border-color: rgba(255,255,255,0.12) !important;
+}
+#view-compare .cpick-search-wrap {
+  border-bottom-color: rgba(255,255,255,0.1) !important;
+}
+#view-compare .cpick-search {
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(255,255,255,0.12) !important;
+  color: #e8f0fe !important;
+}
+#view-compare .cpick-search:focus  { border-color: rgba(96,165,250,0.5) !important; }
+#view-compare .cpick-search::placeholder { color: rgba(255,255,255,0.3) !important; }
+#view-compare .cpick-item          { color: #cbd5e1 !important; }
+#view-compare .cpick-item:hover    { background: rgba(255,255,255,0.08) !important; }
+#view-compare .cpick-item--sel     { background: rgba(37,99,235,0.2) !important; color: #fff !important; }
+#view-compare .cpick-item-rank     { color: rgba(255,255,255,0.35) !important; }
+#view-compare .cpick-empty         { color: rgba(255,255,255,0.3) !important; }
+
+/* ── Compare table on dark bg ────────────────────────────────────── */
+#view-compare .compare-table {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.1);
+}
+#view-compare .compare-table th {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.5);
+  border-bottom-color: rgba(255,255,255,0.1);
+}
+#view-compare .compare-table td {
+  color: #e2e8f0;
+  border-bottom-color: rgba(255,255,255,0.06);
+}
+#view-compare .compare-table .row-winner { background: rgba(16,185,129,0.1); }
+
+/* ── Popular chips on dark bg ────────────────────────────────────── */
+#view-compare .compare-popular-label { color: rgba(255,255,255,0.35); }
+#view-compare .popular-chip {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.75);
+}
+#view-compare .popular-chip:hover {
+  background: rgba(96,165,250,0.15);
+  border-color: rgba(96,165,250,0.4);
+  color: #fff;
 }
 
 /* ── COMPARE WRAP ───────────────────────────── */

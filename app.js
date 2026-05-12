@@ -687,7 +687,7 @@ createApp({
   </div>
 
   <!-- ══ COMPARE ═══════════════════════════════ -->
-  <div v-show="view === 'compare'">
+  <div v-show="view === 'compare'" id="view-compare">
     <div class="compare-hero">
       <div class="compare-hero-inner">
         <div class="compare-hero-badge">
