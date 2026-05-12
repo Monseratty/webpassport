@@ -191,19 +191,22 @@ const VectorMap = {
       return { vf: '#22c55e', voa: '#3b82f6', ev: '#eab308', vr: '#ef4444', own: '#15803d', visited: '#a855f7' }
     },
     applyColors() {
-      if (!this._map) return
+      const container = document.getElementById(this.uid)
+      if (!container) return
       const C = this.COLORS()
-      const regions = this._map.regions
-      if (!regions) return
-      // reset all regions to base color first
-      Object.values(regions).forEach(r => {
-        try { r.element.setStyle('fill', '#1e293b') } catch {}
+      // reset all paths to base fill
+      container.querySelectorAll('path.jvm-region').forEach(p => {
+        p.setAttribute('fill', '#1e293b')
+        p.style.fill = ''
       })
-      // apply visa colors
+      // apply visa colors via data-code attribute
       Object.entries(this.series).forEach(([iso, type]) => {
         const color = C[type]
-        if (color && regions[iso]) {
-          try { regions[iso].element.setStyle('fill', color) } catch {}
+        if (!color) return
+        const path = container.querySelector(`[data-code="${iso}"]`)
+        if (path) {
+          path.setAttribute('fill', color)
+          path.style.fill = color
         }
       })
     },
@@ -224,7 +227,8 @@ const VectorMap = {
             hover:   { fillOpacity: 0.75 }
           }
         })
-        this.applyColors()
+        // wait one frame so jsvectormap finishes painting SVG paths
+        requestAnimationFrame(() => this.applyColors())
       } catch (e) { console.warn('VectorMap init error', e) }
     }
   },
