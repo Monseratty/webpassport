@@ -453,6 +453,17 @@ createApp({
     // ── Profile / Stack ──────────────────────────────
     const stack = ref(null); const stackLoading = ref(false)
 
+    const profileMapSeries = computed(() => {
+      const d = stack.value?.destinations
+      if (!d) return {}
+      const s = {}
+      ;(d['Visa free']       || []).forEach(c => { s[c.isoShortCode] = 'vf'  })
+      ;(d['Visa on arrival'] || []).forEach(c => { s[c.isoShortCode] = 'voa' })
+      ;(d['ETA']             || []).forEach(c => { s[c.isoShortCode] = 'ev'  })
+      ;(d['Visa required']   || []).forEach(c => { s[c.isoShortCode] = 'vr'  })
+      return s
+    })
+
     async function loadStack() {
       if (!loggedIn.value) return
       stackLoading.value = true
@@ -562,7 +573,7 @@ createApp({
       detail, detailLoading, destFilter, destSearch, DEST_CATS, filteredDests, destCount, detailMapSeries, addMyPassport,
       cmpA, cmpB, cmpResult, cmpLoading, cmpWinner, cmpMapA, cmpMapB, runCompare, setPopular,
       authMode, authUser, authPass, authError, authLoading, submitAuth,
-      stack, stackLoading, removeMyPassport, removeMyCountry,
+      stack, stackLoading, profileMapSeries, removeMyPassport, removeMyCountry,
       modal, openModal, modalItems, confirmModal,
       publicProfile, publicProfileLoading,
       privacySettings, PRIVACY_ITEMS, togglePrivacy, copyPublicLink,
@@ -931,6 +942,18 @@ createApp({
                 <div class="stat-bar-label"><span>{{ s.l }}</span><strong>{{ s.v??'—' }}</strong></div>
                 <div class="progress-bar"><div class="progress-fill" :style="{width:s.v?Math.round(s.v/195*100)+'%':'0%',background:s.c}"></div></div>
               </div>
+            </div>
+          </div>
+          <div class="profile-panel" style="grid-column:1/-1">
+            <div class="profile-panel-head"><span>{{ t('visa_map') }}</span></div>
+            <div class="map-container">
+              <vector-map :series="profileMapSeries" height="320px" />
+            </div>
+            <div class="map-legend">
+              <span class="legend-item"><span class="legend-dot" style="background:#22c55e"></span>{{ t('cat_vf') }}</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span>{{ t('cat_voa') }}</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#eab308"></span>{{ t('cat_ev') }}</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span>{{ t('cat_vr') }}</span>
             </div>
           </div>
           <div class="profile-panel" style="grid-column:1/-1">
