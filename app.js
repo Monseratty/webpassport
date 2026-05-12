@@ -194,31 +194,67 @@ const VectorMap = {
     COLORS() {
       return { vf: '#22c55e', voa: '#3b82f6', ev: '#eab308', vr: '#ef4444', own: '#15803d', visited: '#a855f7' }
     },
+    getRegionPaths(container, iso) {
+      const paths = [...container.querySelectorAll(`[data-code="${iso}"]`)]
+      if (iso === 'RU') {
+        paths.push(...container.querySelectorAll('[data-code="RU_CRIMEA"]'))
+        const cover = container.querySelector('[data-code="RU_CRIMEA_COVER"]')
+        if (cover) paths.push(cover)
+      }
+      return paths
+    },
+    ensureCrimeaCover(container) {
+      const crimea = container.querySelector('[data-code="RU_CRIMEA"]')
+      if (!crimea || container.querySelector('[data-code="RU_CRIMEA_COVER"]')) return
+      const cover = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+      cover.setAttribute('d', 'M500.19,158.29L500.65,158.63L500.78,159.52L504.4,160.26L505.33,161.08L505.21,161.73L502.86,162.79L505.07,163.52L505.32,164.04L504.9,165.14L505.77,165.53L509,163.84L511.65,163.31L511.79,163L509.66,163.08L508.43,162.33L508.09,160.07L508.3,159.69L510.46,158.52L512.87,158.31L513.18,160.52L512.82,162.62L512.36,164.48L510.15,164.57L509.08,165.31L507.91,165.37L506.62,166.48L505.4,166.6L502.98,164.94L500.92,163.72Z')
+      cover.setAttribute('data-code', 'RU_CRIMEA_COVER')
+      cover.setAttribute('fill', '#1e293b')
+      cover.setAttribute('stroke', 'none')
+      cover.style.pointerEvents = 'none'
+      crimea.parentNode.insertBefore(cover, crimea)
+    },
+    syncCrimeaHover(container) {
+      if (container.dataset.crimeaHoverReady) return
+      container.dataset.crimeaHoverReady = '1'
+      const setHover = hovered => {
+        this.getRegionPaths(container, 'RU').forEach(path => {
+          if (path.dataset.code === 'RU_CRIMEA_COVER') return
+          path.style.fillOpacity = hovered ? '0.75' : ''
+        })
+      }
+      ;['RU', 'RU_CRIMEA'].forEach(code => {
+        container.querySelectorAll(`[data-code="${code}"]`).forEach(path => {
+          path.addEventListener('mouseenter', () => setHover(true))
+          path.addEventListener('mouseleave', () => setHover(false))
+        })
+      })
+    },
     applyColors() {
       const container = document.getElementById(this.uid)
       if (!container) return
+      this.ensureCrimeaCover(container)
+      this.syncCrimeaHover(container)
       const C = this.COLORS()
       // reset all paths to base fill
       container.querySelectorAll('path.jvm-region').forEach(p => {
         p.setAttribute('fill', '#1e293b')
         p.style.fill = ''
+        p.style.fillOpacity = ''
       })
+      const crimeaCover = container.querySelector('[data-code="RU_CRIMEA_COVER"]')
+      if (crimeaCover) {
+        crimeaCover.setAttribute('fill', '#1e293b')
+        crimeaCover.style.fill = '#1e293b'
+      }
       // apply visa colors via data-code attribute
       Object.entries(this.series).forEach(([iso, type]) => {
         const color = C[type]
         if (!color) return
-        const path = container.querySelector(`[data-code="${iso}"]`)
-        if (path) {
+        this.getRegionPaths(container, iso).forEach(path => {
           path.setAttribute('fill', color)
           path.style.fill = color
-        }
-        if (iso === 'RU') {
-          const crimea = container.querySelector('[data-code="RU_CRIMEA"]')
-          if (crimea) {
-            crimea.setAttribute('fill', color)
-            crimea.style.fill = color
-          }
-        }
+        })
       })
     },
     init() {
