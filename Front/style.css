@@ -3201,3 +3201,144 @@ input, select {
     transition: none;
   }
 }
+
+/* ── Vue app additions ───────────────────────────────────── */
+
+.profile-info { flex: 1; min-width: 0; }
+
+.profile-meta-row {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(255,255,255,.1);
+  padding-top: 20px;
+  margin-top: 14px;
+}
+
+.profile-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-meta-item strong {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.profile-meta-item span {
+  font-size: 12px;
+  color: rgba(255,255,255,.5);
+  font-weight: 500;
+}
+
+.profile-body {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 24px 60px;
+}
+
+.profile-columns {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+}
+
+.profile-panel {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+.profile-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--c-border);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.profile-panel-action {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-accent);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.profile-panel-action:hover { text-decoration: underline; }
+
+.passport-mini-list { padding: 8px 12px 12px; }
+
+.stats-bars { padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+
+.stat-bar-row {}
+
+.stat-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: var(--c-text);
+}
+
+.country-chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px;
+}
+
+.country-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: 99px;
+  padding: 4px 10px 4px 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-text);
+}
+
+.country-chip button {
+  font-size: 11px;
+  color: var(--c-muted);
+  margin-left: 2px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color .15s;
+}
+
+.country-chip button:hover { color: var(--vr); }
+
+.auth-form-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--c-text);
+  margin: 0 0 6px;
+}
+
+.auth-form-sub {
+  font-size: 14px;
+  color: var(--c-muted);
+  margin: 0 0 24px;
+}
+
+@media (max-width: 768px) {
+  .profile-columns { grid-template-columns: 1fr; }
+}
