@@ -212,6 +212,13 @@ const VectorMap = {
           path.setAttribute('fill', color)
           path.style.fill = color
         }
+        if (iso === 'RU') {
+          const crimea = container.querySelector('[data-code="RU_CRIMEA"]')
+          if (crimea) {
+            crimea.setAttribute('fill', color)
+            crimea.style.fill = color
+          }
+        }
       })
     },
     init() {
